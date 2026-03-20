@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Taxly — CA Compliance & Practice Management</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<style>
+/* ════════════ DESIGN TOKENS ════════════ */
+:root{
+  --c-bg:#f0f2f7;
+  --c-surface:#ffffff;
+  --c-navy:#0f1f3d;
+  --c-navy-mid:#1a3260;
+  --c-gold:#e8a800;
+  --c-gold-lt:#ffc62b;
+  --c-blue:#2563eb;
+  --c-blue-lt:#dbeafe;
+  --c-green:#16a34a;
+  --c-green-lt:#dcfce7;
+  --c-red:#dc2626;
+  --c-red-lt:#fee2e2;
+  --c-amber:#d97706;
+  --c-amber-lt:#fef3c7;
+  --c-purple:#7c3aed;
+  --c-purple-lt:#ede9fe;
+  --c-text:#0f1f3d;
+  --c-muted:#64748b;
+  --c-border:#e2e8f0;
+  --c-sidebar:260px;
+  --radius:12px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.12);
+}
+
+/* ════════════ RESET ════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Inter',sans-serif;background:var(--c-bg);color:var(--c-text);min-height:100vh;}
+
+/* ════════════ VIEWS ════════════ */
+.view{display:none;}
+.view.active{display:flex;}
+#view-landing.active{display:block;}
+#view-login.active{display:flex;}
+#view-changepwd.active{display:flex;}
+
+/* ════════════ UTILITY ════════════ */
+.hidden{display:none!important;}
+.text-muted{color:var(--c-muted);}
+.text-sm{font-size:12.5px;}
+.font-mono{font-family:'JetBrains Mono',monospace;}
+.truncate{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* Spinner */
+.spinner{width:18px;height:18px;border:2.5px solid rgba(255,255,255,.25);border-top-color:white;border-radius:50%;animation:spin .65s linear infinite;display:inline-block;vertical-align:middle;}
+.spinner-dark{border-color:rgba(0,0,0,.15);border-top-color:var(--c-navy);}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Dots loader */
+.dots::after{content:'';animation:dotani 1.2s steps(3,end) infinite;}
+@keyframes dotani{0%{content:'';}33%{content:'.';}66%{content:'..';}100%{content:'...'}}
+
+/* Reveal */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease;}
+.reveal.in{opacity:1;transform:translateY(0);}
+
+/* ════════════ TOAST ════════════ */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--c-navy);color:#fff;padding:13px 18px;border-radius:10px;font-size:13.5px;font-weight:500;z-index:9999;transform:translateY(80px);opacity:0;transition:all .28s;display:flex;align-items:center;gap:9px;max-width:340px;box-shadow:var(--shadow-lg);}
+#toast.show{transform:translateY(0);opacity:1;}
+#toast.ok{background:var(--c-green);}
+#toast.err{background:var(--c-red);}
+#toast.warn{background:var(--c-amber);}
+
+/* ════════════ MODAL ════════════ */
+.mo{position:fixed;inset:0;background:rgba(15,31,61,.5);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s;}
+.mo.open{opacity:1;pointer-events:all;}
+.mo-box{background:#fff;border-radius:16px;padding:28px;width:100%;max-height:88vh;overflow-y:auto;transform:translateY(14px);transition:transform .2s;box-shadow:var(--shadow-lg);}
+.mo.open .mo-box{transform:translateY(0);}
+.mo-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.mo-title{font-size:17px;font-weight:700;}
+.mo-close{background:none;border:1.5px solid var(--c-border);border-radius:8px;padding:5px 10px;cursor:pointer;color:var(--c-muted);transition:all .15s;}
+.mo-close:hover{background:var(--c-bg);color:var(--c-text);}
+
+/* ════════════ FORMS ════════════ */
+.fg{margin-bottom:14px;}
+.fg label{display:block;font-size:12px;font-weight:600;color:var(--c-text);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px;}
+.fi,.fs,.ft{width:100%;padding:9px 12px;border:1.5px solid var(--c-border);border-radius:8px;font-size:13.5px;font-family:'Inter',sans-serif;color:var(--c-text);background:#fff;outline:none;transition:border-color .15s,box-shadow .15s;}
+.fi:focus,.fs:focus,.ft:focus{border-color:var(--c-navy);box-shadow:0 0 0 3px rgba(15,31,61,.07);}
+.ft{resize:vertical;min-height:70px;}
+
+/* Grid helpers */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.span2{grid-column:span 2;}
+
+/* ════════════ BUTTONS ════════════ */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .15s;text-decoration:none;white-space:nowrap;}
+.btn:disabled{opacity:.55;cursor:not-allowed;}
+.btn-primary{background:var(--c-navy);color:#fff;}
+.btn-primary:hover:not(:disabled){background:var(--c-navy-mid);}
+.btn-gold{background:var(--c-gold);color:var(--c-navy);}
+.btn-gold:hover:not(:disabled){background:var(--c-gold-lt);}
+.btn-outline{background:transparent;color:var(--c-text);border:1.5px solid var(--c-border);}
+.btn-outline:hover:not(:disabled){background:var(--c-bg);}
+.btn-danger{background:var(--c-red-lt);color:var(--c-red);border:1px solid #fecaca;}
+.btn-danger:hover:not(:disabled){background:#fee2e2;}
+.btn-success{background:var(--c-green-lt);color:var(--c-green);border:1px solid #bbf7d0;}
+.btn-sm{padding:5px 11px;font-size:12px;}
+.btn-xs{padding:3px 9px;font-size:11.5px;}
+
+/* ════════════ BADGES ════════════ */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11.5px;font-weight:600;}
+.b-pending{background:#fff7ed;color:#c2410c;}
+.b-converted{background:var(--c-green-lt);color:var(--c-green);}
+.b-closed{background:#f1f5f9;color:#64748b;}
+.b-overdue{background:var(--c-red-lt);color:var(--c-red);}
+.b-due{background:var(--c-amber-lt);color:var(--c-amber);}
+.b-upcoming{background:var(--c-blue-lt);color:var(--c-blue);}
+.b-completed{background:var(--c-green-lt);color:var(--c-green);}
+.b-active{background:var(--c-blue-lt);color:var(--c-blue);}
+.b-super{background:#fef2f2;color:#dc2626;}
+.b-admin{background:#fff7ed;color:#c2410c;}
+.b-manager{background:var(--c-blue-lt);color:var(--c-blue);}
+.b-staff{background:var(--c-green-lt);color:var(--c-green);}
+.b-viewer{background:var(--c-purple-lt);color:var(--c-purple);}
+
+/* ════════════ TABLE ════════════ */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:#f8fafc;}
+th{padding:10px 14px;text-align:left;font-size:11.5px;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--c-border);}
+td{padding:11px 14px;border-bottom:1px solid var(--c-border);font-size:13.5px;vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:#fafbff;}
+
+/* ════════════ CARD ════════════ */
+.card{background:var(--c-surface);border-radius:var(--radius);border:1px solid var(--c-border);overflow:hidden;box-shadow:var(--shadow);}
+.card-hd{padding:16px 20px;border-bottom:1px solid var(--c-border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.card-hd-title{font-size:15px;font-weight:700;}
+.card-body{padding:20px;}
+
+/* Stat card */
+.stat-card{background:var(--c-surface);border-radius:var(--radius);padding:20px 22px;border:1px solid var(--c-border);position:relative;overflow:hidden;box-shadow:var(--shadow);}
+.stat-val{font-size:30px;font-weight:800;line-height:1;margin-bottom:3px;}
+.stat-lbl{font-size:12px;font-weight:600;color:var(--c-muted);text-transform:uppercase;letter-spacing:.6px;}
+.stat-icon{position:absolute;bottom:14px;right:14px;width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+
+/* Grid layouts */
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px;}
+.two-col{display:grid;grid-template-columns:1.5fr 1fr;gap:18px;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+
+/* ════════════ SIDEBAR ════════════ */
+.sidebar{width:var(--c-sidebar);background:var(--c-navy);min-height:100vh;position:fixed;left:0;top:0;z-index:100;display:flex;flex-direction:column;overflow-y:auto;}
+.sb-logo{padding:22px 18px 16px;border-bottom:1px solid rgba(255,255,255,.07);}
+.sb-logo-inner{display:flex;align-items:center;gap:10px;}
+.sb-logo-icon{width:34px;height:34px;background:var(--c-gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--c-navy);flex-shrink:0;}
+.sb-logo-text{font-size:18px;font-weight:800;color:#fff;letter-spacing:-.4px;}
+.sb-logo-sub{font-size:10px;font-weight:600;color:var(--c-gold);text-transform:uppercase;letter-spacing:1.2px;margin-top:1px;}
+.sb-nav{padding:14px 10px;flex:1;}
+.sb-section{font-size:10px;font-weight:700;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1.5px;padding:0 10px;margin:14px 0 5px;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:rgba(255,255,255,.6);font-size:13.5px;font-weight:500;text-decoration:none;transition:all .15s;margin-bottom:1px;cursor:pointer;border:none;background:none;font-family:'Inter',sans-serif;width:100%;}
+.sb-item:hover,.sb-item.active{background:rgba(255,255,255,.08);color:#fff;}
+.sb-item.active{background:rgba(232,168,0,.15);color:var(--c-gold-lt);border-left:3px solid var(--c-gold);padding-left:9px;}
+.sb-item i{width:17px;text-align:center;font-size:14px;}
+.sb-footer{padding:12px 14px;border-top:1px solid rgba(255,255,255,.07);}
+.sb-user-row{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+.sb-avatar{width:32px;height:32px;background:rgba(232,168,0,.18);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--c-gold);font-weight:800;font-size:13px;flex-shrink:0;}
+.sb-user-name{font-size:13px;font-weight:600;color:#fff;flex:1;min-width:0;}
+.sb-user-role{font-size:11px;color:rgba(255,255,255,.35);}
+.btn-logout{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);color:rgba(255,255,255,.55);border-radius:8px;padding:7px;font-size:12.5px;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .15s;}
+.btn-logout:hover{background:rgba(255,255,255,.1);color:#fff;}
+
+/* ════════════ MAIN AREA ════════════ */
+.main{margin-left:var(--c-sidebar);min-height:100vh;display:flex;flex-direction:column;}
+.topbar{background:#fff;padding:14px 24px;border-bottom:1px solid var(--c-border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 1px 4px rgba(0,0,0,.04);}
+.topbar-title{font-size:17px;font-weight:700;}
+.topbar-sub{font-size:12.5px;color:var(--c-muted);margin-top:2px;}
+.topbar-actions{display:flex;align-items:center;gap:10px;}
+.page-body{padding:22px 24px;flex:1;}
+
+/* Empty state */
+.empty{padding:48px 24px;text-align:center;color:var(--c-muted);}
+.empty i{font-size:36px;display:block;margin-bottom:12px;opacity:.25;}
+.empty p{font-size:13.5px;}
+
+/* Progress bar */
+.progress-wrap{height:8px;background:var(--c-border);border-radius:20px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:20px;background:linear-gradient(90deg,var(--c-navy),var(--c-blue));transition:width .4s;}
+
+/* Tab strip */
+.tab-strip{display:flex;gap:4px;background:#fff;padding:5px;border-radius:10px;border:1px solid var(--c-border);width:fit-content;margin-bottom:18px;}
+.tab-btn{padding:8px 16px;border-radius:7px;border:none;background:transparent;font-size:13px;font-weight:600;color:var(--c-muted);font-family:'Inter',sans-serif;cursor:pointer;transition:all .15s;}
+.tab-btn.active{background:var(--c-navy);color:#fff;}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* Filter pill row */
+.filter-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
+
+/* ════════════ LANDING ════════════ */
+#view-landing{min-height:100vh;background:var(--c-bg);}
+
+.lp-nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:15px 56px;transition:all .3s;}
+.lp-nav.scrolled{background:rgba(15,31,61,.96);backdrop-filter:blur(14px);padding:11px 56px;box-shadow:0 3px 30px rgba(0,0,0,.3);}
+.lp-logo{display:flex;align-items:center;gap:10px;}
+.lp-logo-icon{width:36px;height:36px;background:var(--c-gold);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--c-navy);}
+.lp-logo-name{font-size:19px;font-weight:800;color:#fff;}
+.lp-nav-links{display:flex;gap:24px;}
+.lp-nav-links a{color:rgba(255,255,255,.65);font-size:14px;font-weight:500;text-decoration:none;transition:color .2s;}
+.lp-nav-links a:hover{color:#fff;}
+.lp-nav-btns{display:flex;gap:8px;}
+.btn-lp-outline{padding:8px 20px;border:1.5px solid rgba(255,255,255,.28);border-radius:8px;color:#fff;font-size:13.5px;font-weight:600;background:transparent;cursor:pointer;font-family:'Inter',sans-serif;transition:all .18s;}
+.btn-lp-outline:hover{border-color:var(--c-gold);color:var(--c-gold);}
+.btn-lp-gold{padding:9px 22px;background:var(--c-gold);color:var(--c-navy);border:none;border-radius:8px;font-size:13.5px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:all .18s;}
+.btn-lp-gold:hover{background:var(--c-gold-lt);transform:translateY(-1px);}
+
+/* Hero */
+.lp-hero{min-height:100vh;background:var(--c-navy);position:relative;display:flex;align-items:center;justify-content:center;text-align:center;padding:120px 24px 110px;overflow:hidden;}
+.hero-glow{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;}
+.hg1{width:600px;height:600px;background:rgba(37,99,235,.2);top:-80px;right:-60px;}
+.hg2{width:500px;height:500px;background:rgba(232,168,0,.12);bottom:-60px;left:-40px;}
+.hg3{width:300px;height:300px;background:rgba(37,99,235,.1);top:40%;left:35%;}
+.hero-grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(232,168,0,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(232,168,0,.04) 1px,transparent 1px);background-size:60px 60px;}
+.hero-inner{position:relative;z-index:2;max-width:820px;}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:7px;background:rgba(232,168,0,.1);border:1px solid rgba(232,168,0,.25);color:var(--c-gold-lt);padding:6px 16px;border-radius:40px;font-size:12.5px;font-weight:600;margin-bottom:26px;animation:fadeDown .6s ease both;}
+.hero-title{font-size:clamp(42px,6vw,78px);font-weight:800;line-height:1.06;color:#fff;letter-spacing:-2px;margin-bottom:20px;animation:fadeUp .7s .1s ease both;}
+.hero-title .accent{color:var(--c-gold-lt);}
+.hero-sub{font-size:17px;font-weight:400;color:rgba(255,255,255,.52);line-height:1.75;max-width:560px;margin:0 auto 38px;animation:fadeUp .7s .2s ease both;}
+.hero-ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;animation:fadeUp .7s .3s ease both;}
+.btn-hero-primary{background:var(--c-gold);color:var(--c-navy);padding:14px 30px;border-radius:9px;font-size:15px;font-weight:700;border:none;cursor:pointer;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:9px;box-shadow:0 8px 26px rgba(232,168,0,.3);transition:all .2s;}
+.btn-hero-primary:hover{background:var(--c-gold-lt);transform:translateY(-2px);}
+.btn-hero-ghost{background:rgba(255,255,255,.07);color:#fff;padding:14px 30px;border-radius:9px;font-size:15px;font-weight:500;border:1.5px solid rgba(255,255,255,.18);cursor:pointer;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:9px;transition:all .2s;}
+.btn-hero-ghost:hover{background:rgba(255,255,255,.12);}
+.hero-stats{position:absolute;bottom:0;left:0;right:0;background:rgba(255,255,255,.04);backdrop-filter:blur(10px);border-top:1px solid rgba(255,255,255,.07);animation:fadeUp .7s .4s ease both;}
+.hstats-inner{display:flex;max-width:800px;margin:0 auto;}
+.hstat{flex:1;padding:20px;text-align:center;border-right:1px solid rgba(255,255,255,.07);}
+.hstat:last-child{border-right:none;}
+.hstat-n{font-size:30px;font-weight:800;color:var(--c-gold-lt);}
+.hstat-l{font-size:11px;color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:.8px;margin-top:2px;}
+
+/* Landing sections */
+.lp-section{padding:86px 56px;}
+.lp-sh{margin-bottom:48px;}
+.lp-sh.center{text-align:center;}
+.lp-sh.center .lp-sh-sub{margin:12px auto 0;}
+.lp-label{font-size:12px;font-weight:700;color:var(--c-blue);text-transform:uppercase;letter-spacing:1.8px;margin-bottom:10px;}
+.lp-title{font-size:clamp(28px,3.5vw,44px);font-weight:800;color:var(--c-navy);line-height:1.15;letter-spacing:-.8px;}
+.lp-sh-sub{font-size:15.5px;color:var(--c-muted);line-height:1.75;max-width:520px;margin-top:12px;}
+
+/* Feature grid */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--c-border);border-radius:16px;overflow:hidden;}
+.feat-card{background:#fff;padding:30px 26px;position:relative;overflow:hidden;transition:background .18s;}
+.feat-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--c-blue),var(--c-gold));transform:scaleX(0);transition:transform .28s;transform-origin:left;}
+.feat-card:hover::before{transform:scaleX(1);}
+.feat-card:hover{background:#fafbff;}
+.feat-icon{width:44px;height:44px;border-radius:11px;background:linear-gradient(135deg,var(--c-navy),var(--c-navy-mid));display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--c-gold-lt);margin-bottom:14px;}
+.feat-title{font-size:15px;font-weight:700;color:var(--c-navy);margin-bottom:7px;}
+.feat-desc{font-size:13px;color:var(--c-muted);line-height:1.65;}
+
+/* How-it-works */
+.how-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;position:relative;}
+.how-steps::before{content:'';position:absolute;top:27px;left:13%;right:13%;height:1px;background:linear-gradient(90deg,transparent,var(--c-gold),transparent);}
+.how-step{text-align:center;position:relative;z-index:1;}
+.how-step-n{width:54px;height:54px;border-radius:50%;background:var(--c-navy);border:2.5px solid var(--c-gold);color:var(--c-gold-lt);font-size:19px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
+.how-step-t{font-size:14px;font-weight:700;color:var(--c-navy);margin-bottom:6px;}
+.how-step-d{font-size:12.5px;color:var(--c-muted);line-height:1.6;}
+
+/* Roles grid */
+.roles-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:13px;}
+.role-card{border:1.5px solid var(--c-border);border-radius:12px;padding:20px 16px;transition:all .18s;}
+.role-card:hover{border-color:var(--c-blue);box-shadow:0 6px 22px rgba(37,99,235,.1);}
+.role-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;}
+.role-name{font-size:14px;font-weight:700;color:var(--c-navy);margin-bottom:9px;}
+.perm-row{display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:4px;}
+.perm-row i{font-size:10px;flex-shrink:0;}
+.p-yes{color:var(--c-green);}
+.p-no{color:#d1d5db;}
+
+/* Module cards */
+.mod-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.mod-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:13px;padding:22px 24px;display:flex;gap:14px;transition:all .18s;}
+.mod-card:hover{background:rgba(255,255,255,.07);border-color:rgba(232,168,0,.25);transform:translateY(-2px);}
+.mod-num{width:34px;height:34px;border-radius:8px;background:var(--c-gold);color:var(--c-navy);font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.mod-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;}
+.mod-desc{font-size:12px;color:rgba(255,255,255,.4);margin-bottom:8px;line-height:1.5;}
+.mod-tags{display:flex;gap:5px;flex-wrap:wrap;}
+.mod-tag{font-size:10.5px;font-family:'JetBrains Mono',monospace;background:rgba(232,168,0,.1);color:var(--c-gold-lt);padding:2px 7px;border-radius:4px;}
+
+/* CTA */
+.cta-box{background:var(--c-navy);border-radius:18px;padding:60px 48px;text-align:center;position:relative;overflow:hidden;}
+.cta-box::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(232,168,0,.12),transparent 55%);}
+.cta-box .lp-title{color:#fff;position:relative;}
+.cta-box p{color:rgba(255,255,255,.5);font-size:15px;margin:12px auto 32px;max-width:420px;position:relative;}
+
+/* LP footer */
+.lp-footer{background:var(--c-navy);border-top:1px solid rgba(255,255,255,.06);padding:30px 56px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;}
+.lp-footer p{font-size:13px;color:rgba(255,255,255,.28);}
+.lp-footer-links{display:flex;gap:20px;}
+.lp-footer-links a{font-size:13px;color:rgba(255,255,255,.38);text-decoration:none;transition:color .18s;}
+.lp-footer-links a:hover{color:var(--c-gold-lt);}
+
+/* ════════════ LOGIN ════════════ */
+#view-login{min-height:100vh;background:var(--c-navy);}
+.login-panel-left{flex:1;background:linear-gradient(155deg,var(--c-navy) 0%,var(--c-navy-mid) 60%,#1c3870 100%);display:flex;flex-direction:column;justify-content:space-between;padding:48px 50px;position:relative;overflow:hidden;}
+.login-panel-left::before{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.03) 1px,transparent 1px);background-size:28px 28px;}
+.login-panel-left::after{content:'';position:absolute;bottom:-80px;right:-80px;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(232,168,0,.08) 0%,transparent 60%);}
+.ll-logo{display:flex;align-items:center;gap:10px;position:relative;z-index:1;}
+.ll-logo-icon{width:38px;height:38px;background:var(--c-gold);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;color:var(--c-navy);}
+.ll-logo-name{font-size:20px;font-weight:800;color:#fff;}
+.ll-content{position:relative;z-index:1;}
+.ll-title{font-size:36px;font-weight:800;color:#fff;line-height:1.12;letter-spacing:-1px;margin-bottom:14px;}
+.ll-title .accent{color:var(--c-gold-lt);}
+.ll-sub{font-size:14.5px;color:rgba(255,255,255,.43);line-height:1.7;max-width:320px;margin-bottom:32px;}
+.ll-feats{display:flex;flex-direction:column;gap:13px;}
+.ll-feat{display:flex;align-items:center;gap:11px;}
+.ll-feat-icon{width:32px;height:32px;border-radius:8px;background:rgba(232,168,0,.12);color:var(--c-gold-lt);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.ll-feat span{font-size:13px;color:rgba(255,255,255,.58);}
+.ll-footer{font-size:12px;color:rgba(255,255,255,.2);position:relative;z-index:1;}
+
+.login-panel-right{width:440px;background:#f8f9fc;display:flex;flex-direction:column;justify-content:center;padding:52px 46px;position:relative;}
+.lr-back{position:absolute;top:22px;left:22px;background:none;border:1.5px solid var(--c-border);border-radius:8px;padding:5px 12px;font-size:12.5px;font-weight:600;color:var(--c-muted);cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;transition:all .18s;}
+.lr-back:hover{border-color:var(--c-navy);color:var(--c-navy);}
+.lr-header{margin-bottom:26px;}
+.lr-title{font-size:26px;font-weight:800;color:var(--c-navy);letter-spacing:-.5px;margin-bottom:4px;}
+.lr-sub{font-size:13.5px;color:var(--c-muted);}
+
+/* Login tabs */
+.login-tabs{display:flex;background:var(--c-border);border-radius:9px;padding:4px;margin-bottom:22px;}
+.login-tab{flex:1;padding:8px;border-radius:6px;border:none;background:transparent;font-size:13.5px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;color:var(--c-muted);transition:all .18s;}
+.login-tab.active{background:#fff;color:var(--c-navy);box-shadow:0 2px 6px rgba(0,0,0,.09);}
+
+/* Login form elements */
+.lf-group{margin-bottom:16px;}
+.lf-label{display:block;font-size:11.5px;font-weight:700;color:var(--c-text);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px;}
+.lf-input{width:100%;padding:11px 13px;border:1.5px solid var(--c-border);border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;color:var(--c-text);background:#fff;outline:none;transition:border-color .18s,box-shadow .18s;}
+.lf-input:focus{border-color:var(--c-navy);box-shadow:0 0 0 3px rgba(15,31,61,.07);}
+.lf-input.err{border-color:var(--c-red);}
+.pw-wrap{position:relative;}
+.pw-eye{position:absolute;right:11px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--c-muted);font-size:14px;padding:4px;}
+.btn-login{width:100%;padding:13px;background:var(--c-navy);color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:all .18s;margin-top:4px;}
+.btn-login:hover:not(:disabled){background:var(--c-navy-mid);transform:translateY(-1px);}
+.btn-login:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+.err-box{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 13px;font-size:13px;color:var(--c-red);display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+.def-creds{background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;padding:13px 15px;margin-top:18px;}
+.def-creds-title{font-size:12px;font-weight:700;color:var(--c-blue);margin-bottom:7px;}
+.dc-row{display:flex;justify-content:space-between;font-size:12px;color:#1e40af;margin-bottom:3px;}
+.dc-val{font-family:'JetBrains Mono',monospace;font-size:11.5px;background:rgba(37,99,235,.1);padding:1px 6px;border-radius:4px;}
+
+/* ════════════ CHANGE PASSWORD ════════════ */
+#view-changepwd{min-height:100vh;background:var(--c-navy);align-items:center;justify-content:center;}
+.cpwd-card{background:#f8f9fc;border-radius:18px;padding:48px 44px;width:100%;max-width:420px;margin:24px;}
+.cpwd-icon{width:54px;height:54px;background:var(--c-navy);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--c-gold);margin-bottom:20px;}
+.req-item{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--c-muted);margin-bottom:4px;transition:color .18s;}
+.req-item.met{color:var(--c-green);}
+.req-item i{font-size:11px;}
+
+/* ════════════ ANIMATIONS ════════════ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
+
+/* Responsive */
+@media(max-width:960px){
+  .stats-grid{grid-template-columns:repeat(3,1fr);}
+  .feat-grid{grid-template-columns:1fr 1fr;}
+  .how-steps{grid-template-columns:1fr 1fr;}
+  .how-steps::before{display:none;}
+  .roles-grid{grid-template-columns:1fr 1fr;}
+  .two-col{grid-template-columns:1fr;}
+  .login-panel-left{display:none;}
+  .login-panel-right{width:100%;}
+  .lp-nav-links{display:none;}
+  .lp-section{padding:60px 24px;}
+  .lp-nav{padding:14px 20px;}
+  .lp-nav.scrolled{padding:11px 20px;}
+  .sidebar{transform:translateX(-100%);}
+  .main{margin-left:0;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     LANDING PAGE
+══════════════════════════════════════════════ -->
+<div id="view-landing" class="view active">
+
+  <!-- Navbar -->
+  <nav class="lp-nav" id="lp-nav">
+    <div class="lp-logo">
+      <div class="lp-logo-icon">⚖</div>
+      <span class="lp-logo-name">Taxly</span>
+    </div>
+    <div class="lp-nav-links">
+      <a href="#features">Features</a>
+      <a href="#modules">Modules</a>
+      <a href="#roles">Roles</a>
+      <a href="#ai">AI Drafting</a>
+    </div>
+    <div class="lp-nav-btns">
+      <button class="btn-lp-outline" onclick="showLogin('staff')">Staff Login</button>
+      <button class="btn-lp-gold"    onclick="showLogin('admin')">Admin Login</button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="lp-hero">
+    <div class="hero-grid-bg"></div>
+    <div class="hero-glow hg1"></div>
+    <div class="hero-glow hg2"></div>
+    <div class="hero-glow hg3"></div>
+    <div class="hero-inner">
+      <div class="hero-eyebrow"><i class="fas fa-shield-check"></i> Built for CA & CS Firms</div>
+      <h1 class="hero-title">Complete Practice<br>Management for <span class="accent">CA Firms</span></h1>
+      <p class="hero-sub">From client onboarding to statutory registers — automate compliance tracking, generate AI-powered documents, and manage your entire firm from one platform.</p>
+      <div class="hero-ctas">
+        <button class="btn-hero-primary" onclick="showLogin('admin')"><i class="fas fa-user-shield"></i> Admin Login</button>
+        <button class="btn-hero-ghost"   onclick="showLogin('staff')"><i class="fas fa-user"></i> Staff Login</button>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="hstats-inner">
+        <div class="hstat"><div class="hstat-n">4</div><div class="hstat-l">Modules</div></div>
+        <div class="hstat"><div class="hstat-n">80+</div><div class="hstat-l">API Endpoints</div></div>
+        <div class="hstat"><div class="hstat-n">14</div><div class="hstat-l">AI Doc Types</div></div>
+        <div class="hstat"><div class="hstat-n">5</div><div class="hstat-l">User Roles</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="lp-section" id="features" style="background:#fff;">
+    <div class="container">
+      <div class="lp-sh center reveal">
+        <div class="lp-label">Core Features</div>
+        <h2 class="lp-title">Everything your CA firm needs</h2>
+        <p class="lp-sh-sub">A complete lifecycle platform — from first enquiry through incorporation, governance, compliance and statutory registers.</p>
+      </div>
+      <div class="feat-grid reveal">
+        <div class="feat-card"><div class="feat-icon"><i class="fas fa-user-plus"></i></div><div class="feat-title">Lead & Client Management</div><div class="feat-desc">Capture enquiries, auto-generate AI welcome docs, convert leads to clients with unique IDs and automatic staff assignment by workload.</div></div>
+        <div class="feat-card"><div class="feat-icon"><i class="fas fa-building"></i></div><div class="feat-title">Company Master Records</div><div class="feat-desc">Post-incorporation database — CIN, directors with DIN, shareholders with folio numbers, register of charges and share transfer history.</div></div>
+        <div class="feat-card"><div class="feat-icon"><i class="fas fa-calendar-check"></i></div><div class="feat-title">Meeting Management</div><div class="feat-desc">Board Meetings, AGM, EGM — AI generates compliant notices and minutes per Secretarial Standards SS-1/SS-2.</div></div>
+        <div class="feat-card"><div class="feat-icon"><i class="fas fa-shield-alt"></i></div><div class="feat-title">Post-Inc Compliance</div><div class="feat-desc">Auto-seeded alerts for INC-20A, ADT-1, first board meeting with statutory deadlines, penalty info and AI drafts.</div></div>
+        <div class="feat-card"><div class="feat-icon"><i class="fas fa-file-alt"></i></div><div class="feat-title">Compliance Reminders</div><div class="feat-desc">Annual calendar — MGT-7, AOC-4, DIR-3 KYC, DPT-3, MSME-1. Auto due/overdue updates and AI reminder emails.</div></div>
+        <div class="feat-card"><div class="feat-icon"><i class="fas fa-book"></i></div><div class="feat-title">Statutory Registers</div><div class="feat-desc">Auto-populated MGT-1, Sec 170, CHG-7 and SH-6 registers. Export as branded PDF or Excel with cover sheet.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="lp-section" id="how" style="background:var(--c-bg);text-align:center;">
+    <div class="container">
+      <div class="lp-sh center reveal">
+        <div class="lp-label">Workflow</div>
+        <h2 class="lp-title">From enquiry to compliance</h2>
+      </div>
+      <div class="how-steps reveal">
+        <div class="how-step"><div class="how-step-n">1</div><div class="how-step-t">New Enquiry</div><div class="how-step-d">Capture details. AI drafts thank-you letter, document checklist and price quotation instantly.</div></div>
+        <div class="how-step"><div class="how-step-n">2</div><div class="how-step-t">Convert Client</div><div class="how-step-d">One click creates Client ID, assigns staff by workload, starts workflow progress tracker.</div></div>
+        <div class="how-step"><div class="how-step-n">3</div><div class="how-step-t">Post-Incorporation</div><div class="how-step-d">Update company master. Auto-seed INC-20A, ADT-1 alerts. Generate first board meeting agenda.</div></div>
+        <div class="how-step"><div class="how-step-n">4</div><div class="how-step-t">Ongoing Compliance</div><div class="how-step-d">Annual calendar auto-generates. Auditor 5-year renewal tracked. Registers download in one click.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modules -->
+  <section class="lp-section" id="modules" style="background:var(--c-navy);">
+    <div class="container">
+      <div class="lp-sh reveal">
+        <div class="lp-label" style="color:var(--c-gold-lt)">Architecture</div>
+        <h2 class="lp-title" style="color:#fff">Four production-ready modules</h2>
+        <p class="lp-sh-sub" style="color:rgba(255,255,255,.42)">Each module integrates seamlessly with the others.</p>
+      </div>
+      <div class="mod-grid reveal">
+        <div class="mod-card"><div class="mod-num">1</div><div><div class="mod-title">Lead & Client Management</div><div class="mod-desc">Complete CRM for CA firms</div><div class="mod-tags"><span class="mod-tag">Enquiry</span><span class="mod-tag">AI Docs</span><span class="mod-tag">Client ID</span><span class="mod-tag">Workflow</span></div></div></div>
+        <div class="mod-card"><div class="mod-num">2</div><div><div class="mod-title">Company Master + Meetings</div><div class="mod-desc">Post-incorporation records and governance</div><div class="mod-tags"><span class="mod-tag">Directors</span><span class="mod-tag">Shareholders</span><span class="mod-tag">Board Meetings</span><span class="mod-tag">Resolutions</span></div></div></div>
+        <div class="mod-card"><div class="mod-num">3</div><div><div class="mod-title">Compliance & Auditor</div><div class="mod-desc">Annual calendar and auditor lifecycle</div><div class="mod-tags"><span class="mod-tag">MGT-7</span><span class="mod-tag">AOC-4</span><span class="mod-tag">DIR-3 KYC</span><span class="mod-tag">5-Year Renewal</span></div></div></div>
+        <div class="mod-card"><div class="mod-num">4</div><div><div class="mod-title">Statutory Registers</div><div class="mod-desc">Auto-generated export-ready registers</div><div class="mod-tags"><span class="mod-tag">MGT-1</span><span class="mod-tag">Sec 170</span><span class="mod-tag">CHG-7</span><span class="mod-tag">SH-6</span><span class="mod-tag">PDF/Excel</span></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Roles -->
+  <section class="lp-section" id="roles" style="background:#fff;">
+    <div class="container">
+      <div class="lp-sh center reveal">
+        <div class="lp-label">Access Control</div>
+        <h2 class="lp-title">Role-based access for your team</h2>
+        <p class="lp-sh-sub">Five carefully designed roles ensure each team member has exactly the right access.</p>
+      </div>
+      <div class="roles-grid reveal">
+        <div class="role-card"><div class="role-badge b-super">Super Admin</div><div class="role-name">Firm Principal</div><div class="perm-row p-yes"><i class="fas fa-check-circle"></i><span>Full access</span></div><div class="perm-row p-yes"><i class="fas fa-check-circle"></i><span>Manage users</span></div><div class="perm-row p-yes"><i class="fas fa-check-circle"></i><span>Delete records</span></div><div class="perm-row p-yes"><i class="fas fa-check-circle"></i><span>Audit log</span></div></div>
+        <div class="role-card"><div class="role-badge b-admin">Admin</div><div class="role-name">Senior Manager</div><div class="perm-row p-yes"><i class="fas fa-check-circle"></i><span>All clients</span></div><div class="perm-row p-no"><i class="fas fa-times-circle"></i><span>Create users</span></div><div class="perm-row p-yes"><i class="fas fa-check-circle"></i><span>Delete records</span></div><div class="perm-row p-yes"><i class="fas fa-check-circle"></i><span>Audit log</span></div></div>
+        <div class="role-card"><div class="role-badge b-manager">Manager</div><div class="role-name">Team Lead</div><div class="perm-row p-yes"><i class="fas fa-check-circle"></i><span>All clients</span></div><div class="perm-row p-no"><i class="fas fa-times-circle"></i><span>User mgmt</span></div><div class="perm-row p-no"><i class="fas fa-times-circle"></i><span>Delete records</span></div><div class="perm-row p-yes"><i class="fas fa-check-circle"></i><span>Export data</span></div></div>
+        <div class="role-card"><div class="role-badge b-staff">Staff</div><div class="role-name">CA Associate</div><div class="perm-row p-yes"><i class="fas fa-check-circle"></i><span>Own clients</span></div><div class="perm-row p-no"><i class="fas fa-times-circle"></i><span>Other clients</span></div><div class="perm-row p-no"><i class="fas fa-times-circle"></i><span>Delete records</span></div><div class="perm-row p-yes"><i class="fas fa-check-circle"></i><span>Export</span></div></div>
+        <div class="role-card"><div class="role-badge b-viewer">Viewer</div><div class="role-name">Client/Auditor</div><div class="perm-row p-yes"><i class="fas fa-check-circle"></i><span>View all (read)</span></div><div class="perm-row p-no"><i class="fas fa-times-circle"></i><span>Create</span></div><div class="perm-row p-no"><i class="fas fa-times-circle"></i><span>Delete</span></div><div class="perm-row p-no"><i class="fas fa-times-circle"></i><span>Export</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI section -->
+  <section class="lp-section" id="ai" style="background:linear-gradient(140deg,var(--c-navy-mid) 0%,#0a2050 100%);position:relative;overflow:hidden;">
+    <div style="position:absolute;inset:0;background:radial-gradient(circle at 65% 50%,rgba(232,168,0,.09),transparent 55%);"></div>
+    <div class="container" style="position:relative;z-index:1;">
+      <div class="lp-sh center reveal">
+        <div class="lp-label" style="color:var(--c-gold-lt)">Gemini AI</div>
+        <h2 class="lp-title" style="color:#fff">14 document types, generated instantly</h2>
+        <p class="lp-sh-sub" style="color:rgba(255,255,255,.42)">Every document references the correct section of Companies Act 2013.</p>
+      </div>
+      <div class="three-col reveal">
+        <div class="mod-card"><div style="font-size:26px;margin-bottom:10px;">📋</div><div class="mod-title">Meeting Documents</div><div class="mod-desc">Board Meeting Notices (SS-1), AGM/EGM Notices (SS-2), Minutes, Resolutions.</div></div>
+        <div class="mod-card"><div style="font-size:26px;margin-bottom:10px;">🏢</div><div class="mod-title">Incorporation Docs</div><div class="mod-desc">Thank-you letters, document checklists, price quotations, INC-20A resolutions.</div></div>
+        <div class="mod-card"><div style="font-size:26px;margin-bottom:10px;">📊</div><div class="mod-title">Compliance Drafts</div><div class="mod-desc">MGT-7, AOC-4, DIR-3 KYC, DPT-3, MSME-1 checklists with board resolutions.</div></div>
+        <div class="mod-card"><div style="font-size:26px;margin-bottom:10px;">🔄</div><div class="mod-title">Auditor Documents</div><div class="mod-desc">5-year reappointment pack. ADT-3 resignation with 4 complete documents.</div></div>
+        <div class="mod-card"><div style="font-size:26px;margin-bottom:10px;">⚡</div><div class="mod-title">Resolution Drafts</div><div class="mod-desc">Any subject → RESOLVED THAT draft with FURTHER RESOLVED clauses.</div></div>
+        <div class="mod-card"><div style="font-size:26px;margin-bottom:10px;">📧</div><div class="mod-title">Client Emails</div><div class="mod-desc">Reminder emails for every deadline. Includes penalty info and documents needed.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="lp-section" style="background:var(--c-bg);text-align:center;">
+    <div class="container"><div class="cta-box reveal">
+      <h2 class="lp-title">Ready to modernise your practice?</h2>
+      <p>Sign in to access the full system. New accounts are created by your administrator.</p>
+      <div style="display:flex;gap:12px;justify-content:center;position:relative;">
+        <button class="btn-hero-primary" onclick="showLogin('admin')"><i class="fas fa-user-shield"></i> Admin Login</button>
+        <button class="btn-hero-ghost"   onclick="showLogin('staff')"><i class="fas fa-user"></i> Staff Login</button>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="lp-footer">
+    <div class="lp-logo"><div class="lp-logo-icon" style="width:30px;height:30px;font-size:15px;">⚖</div><span class="lp-logo-name" style="font-size:17px;">Taxly</span></div>
+    <p>© 2025 Taxly · CA & Compliance Management · Powered by FastAPI + Gemini AI</p>
+    <div class="lp-footer-links">
+      <a href="#" onclick="showLogin('admin')">Admin Login</a>
+      <a href="#" onclick="showLogin('staff')">Staff Login</a>
+    </div>
+  </footer>
+</div><!-- /view-landing -->
+
+
+<!-- ══════════════════════════════════════════════
+     LOGIN VIEW
+══════════════════════════════════════════════ -->
+<div id="view-login" class="view">
+  <div class="login-panel-left">
+    <div class="ll-logo"><div class="ll-logo-icon">⚖</div><span class="ll-logo-name">Taxly</span></div>
+    <div class="ll-content">
+      <div class="ll-title">Manage your practice<br>with <span class="accent">precision</span></div>
+      <p class="ll-sub">Complete compliance management for CA & CS firms. All four modules, one seamless platform.</p>
+      <div class="ll-feats">
+        <div class="ll-feat"><div class="ll-feat-icon"><i class="fas fa-robot"></i></div><span>AI-generated notices, minutes & resolutions</span></div>
+        <div class="ll-feat"><div class="ll-feat-icon"><i class="fas fa-shield-alt"></i></div><span>Role-based access — staff see only their clients</span></div>
+        <div class="ll-feat"><div class="ll-feat-icon"><i class="fas fa-book"></i></div><span>Statutory registers export as PDF or Excel</span></div>
+        <div class="ll-feat"><div class="ll-feat-icon"><i class="fas fa-bell"></i></div><span>Auto-alerts for all due dates & auditor renewals</span></div>
+      </div>
+    </div>
+    <div class="ll-footer">© 2025 Taxly · Secure · Private · Professional</div>
+  </div>
+
+  <div class="login-panel-right">
+    <button class="lr-back" onclick="showLanding()"><i class="fas fa-arrow-left"></i> Back</button>
+    <div class="lr-header">
+      <div class="lr-title">Welcome back</div>
+      <div class="lr-sub">Sign in to your Taxly account</div>
+    </div>
+    <div class="login-tabs">
+      <button class="login-tab active" id="tab-admin" onclick="switchTab('admin')"><i class="fas fa-user-shield"></i> Admin</button>
+      <button class="login-tab"        id="tab-staff" onclick="switchTab('staff')"><i class="fas fa-user"></i> Staff</button>
+    </div>
+    <div class="err-box hidden" id="login-err"><i class="fas fa-exclamation-circle"></i><span id="login-err-msg">Invalid credentials</span></div>
+    <form onsubmit="submitLogin(event)">
+      <div class="lf-group"><label class="lf-label">Email Address</label><input type="email" id="login-email" class="lf-input" placeholder="you@cafirm.com" required autocomplete="email"/></div>
+      <div class="lf-group"><label class="lf-label">Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="login-pwd" class="lf-input" placeholder="Your password" required autocomplete="current-password"/>
+          <button type="button" class="pw-eye" onclick="togglePwd()"><i class="fas fa-eye" id="pwd-icon"></i></button>
+        </div>
+      </div>
+      <button type="submit" class="btn-login" id="login-btn"><i class="fas fa-sign-in-alt"></i> Sign In</button>
+    </form>
+    <div class="def-creds" id="admin-creds">
+      <div class="def-creds-title"><i class="fas fa-info-circle"></i> &nbsp;Default Super Admin credentials</div>
+      <div class="dc-row"><span>Email</span><span class="dc-val">admin@taxly.com</span></div>
+      <div class="dc-row"><span>Password</span><span class="dc-val">Admin@1234</span></div>
+      <div style="font-size:11.5px;color:#3b82f6;margin-top:6px;">⚠ You will be asked to change this on first login.</div>
+    </div>
+  </div>
+</div><!-- /view-login -->
+
+
+<!-- ══════════════════════════════════════════════
+     CHANGE PASSWORD VIEW
+══════════════════════════════════════════════ -->
+<div id="view-changepwd" class="view">
+  <div class="cpwd-card">
+    <div class="cpwd-icon"><i class="fas fa-key"></i></div>
+    <h2 style="font-size:24px;font-weight:800;color:var(--c-navy);margin-bottom:5px;">Set your password</h2>
+    <p style="font-size:13.5px;color:var(--c-muted);margin-bottom:22px;line-height:1.6;">Welcome! Please create a new secure password before continuing.</p>
+    <div class="err-box hidden" id="cpwd-err"><i class="fas fa-exclamation-circle"></i><span id="cpwd-err-msg"></span></div>
+    <div class="fg"><label>Current / Temp Password</label><input type="password" class="fi" id="cp-cur" required placeholder="Your temp password"/></div>
+    <div class="fg"><label>New Password</label><input type="password" class="fi" id="cp-new" required placeholder="Min 8 characters" oninput="chkReqs()"/></div>
+    <div style="margin-bottom:16px;">
+      <div class="req-item" id="req-len"><i class="fas fa-circle"></i> At least 8 characters</div>
+      <div class="req-item" id="req-upper"><i class="fas fa-circle"></i> One uppercase letter</div>
+      <div class="req-item" id="req-num"><i class="fas fa-circle"></i> One number</div>
+    </div>
+    <div class="fg"><label>Confirm New Password</label><input type="password" class="fi" id="cp-confirm" required placeholder="Repeat new password"/></div>
+    <button class="btn-login" id="cpwd-btn" onclick="submitChangePwd()"><i class="fas fa-save"></i> Set Password & Continue</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     APP SHELL
+══════════════════════════════════════════════ -->
+<div id="view-app" class="view" style="min-height:100vh;">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-inner">
+        <div style="width:32px;height:32px;background:var(--c-gold);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--c-navy);flex-shrink:0;">⚖</div>
+        <div><div class="sb-logo-text">Taxly</div><div class="sb-logo-sub">Practice Mgmt</div></div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="sb-section">Main</div>
+      <button class="sb-item active" onclick="goPage('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
+
+      <div class="sb-section">Leads & Clients</div>
+      <button class="sb-item" onclick="goPage('new-enquiry')"><i class="fas fa-plus-circle"></i> New Enquiry</button>
+      <button class="sb-item" onclick="goPage('enquiries')"><i class="fas fa-inbox"></i> Enquiries</button>
+      <button class="sb-item" onclick="goPage('clients')"><i class="fas fa-users"></i> Clients</button>
+
+      <div class="sb-section">Governance</div>
+      <button class="sb-item" onclick="goPage('meetings-select')"><i class="fas fa-calendar-check"></i> Meetings</button>
+      <button class="sb-item" onclick="goPage('post-inc-select')"><i class="fas fa-shield-alt"></i> Post-Inc Alerts</button>
+
+      <div class="sb-section">Compliance</div>
+      <button class="sb-item" onclick="goPage('compliance-dash')"><i class="fas fa-tachometer-alt"></i> Compliance Dashboard</button>
+      <button class="sb-item" onclick="goPage('compliance-select')"><i class="fas fa-file-alt"></i> Reminders & Auditor</button>
+
+      <div class="sb-section">Registers</div>
+      <button class="sb-item" onclick="goPage('registers-select')"><i class="fas fa-book"></i> Statutory Registers</button>
+
+      <div class="sb-section">System</div>
+      <button class="sb-item" onclick="goPage('settings')"><i class="fas fa-cog"></i> Settings</button>
+      <button class="sb-item hidden" id="sb-usermgmt" onclick="goPage('user-management')"><i class="fas fa-users-cog"></i> User Management</button>
+    </nav>
+    <div class="sb-footer">
+      <div class="sb-user-row">
+        <div class="sb-avatar" id="sb-av">?</div>
+        <div style="flex:1;min-width:0;"><div class="sb-user-name truncate" id="sb-name">Loading...</div><div class="sb-user-role" id="sb-role"></div></div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main">
+    <div class="topbar">
+      <div><div class="topbar-title" id="pg-title">Dashboard</div><div class="topbar-sub" id="pg-sub">Real-time overview</div></div>
+      <div class="topbar-actions" id="pg-actions"></div>
+    </div>
+    <div class="page-body" id="pg-body">
+      <div class="empty"><div class="spinner spinner-dark" style="width:28px;height:28px;border-width:3px;"></div></div>
+    </div>
+  </div>
+</div><!-- /view-app -->
+
+
+<!-- Generic Modal -->
+<div class="mo" id="mo"><div class="mo-box" id="mo-box"></div></div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+
+<script>
+// ══════════════════════════════════════════════
+// CORE STATE & HELPERS
+// ══════════════════════════════════════════════
+let _user = null;
+
+const $ = id => document.getElementById(id);
+const qsa = s => document.querySelectorAll(s);
+
+function toast(msg, type='') {
+  const t = $('toast');
+  t.innerHTML = (type==='ok'?'<i class="fas fa-check-circle"></i>':type==='err'?'<i class="fas fa-exclamation-circle"></i>':type==='warn'?'<i class="fas fa-exclamation-triangle"></i>':'<i class="fas fa-info-circle"></i>') + msg;
+  t.className = `toast show ${type}`;
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+async function api(method, url, body=null) {
+  const token = localStorage.getItem('taxly_token')||'';
+  const opts = {
+    method, credentials:'include',
+    headers:{'Content-Type':'application/json',...(token?{'Authorization':'Bearer '+token}:{})},
+  };
+  if(body) opts.body = JSON.stringify(body);
+  const r = await fetch(url, opts);
+  if(r.status===401){ doLogout(); throw new Error('Session expired'); }
+  const d = await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(d.detail||'Request failed');
+  return d;
+}
+
+function fmtDate(d){ if(!d) return '—'; return new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); }
+function fmtCur(v){ if(v==null) return '—'; return '₹'+parseFloat(v).toLocaleString('en-IN',{minimumFractionDigits:0}); }
+function fmtNum(v){ if(v==null) return '—'; return parseInt(v).toLocaleString('en-IN'); }
+function safe(v,d='—'){ return (v!=null&&v!=='') ? v : d; }
+
+// Modal
+function openModal(html){ $('mo-box').innerHTML=html; $('mo').classList.add('open'); }
+function closeModal(){ $('mo').classList.remove('open'); }
+$('mo').addEventListener('click',e=>{ if(e.target===$('mo')) closeModal(); });
+
+// ══════════════════════════════════════════════
+// VIEW MANAGEMENT
+// ══════════════════════════════════════════════
+function showView(id){
+  qsa('.view').forEach(v=>v.classList.remove('active'));
+  $(id).classList.add('active');
+}
+function showLanding(){ showView('view-landing'); }
+function showLogin(type='admin'){
+  showView('view-login');
+  switchTab(type);
+  setTimeout(()=>$('login-email').focus(),80);
+}
+function showApp(){ showView('view-app'); }
+function showChangePwd(){ showView('view-changepwd'); }
+
+// Scroll reveal on landing
+const revObs = new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');}),{threshold:.08,rootMargin:'0px 0px -30px 0px'});
+qsa('.reveal').forEach(el=>revObs.observe(el));
+
+window.addEventListener('scroll',()=>$('lp-nav')?.classList.toggle('scrolled',window.scrollY>60));
+
+// ══════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════
+function switchTab(type){
+  $('tab-admin').classList.toggle('active',type==='admin');
+  $('tab-staff').classList.toggle('active',type==='staff');
+  $('admin-creds').classList.toggle('hidden',type!=='admin');
+}
+function togglePwd(){
+  const i=$('login-pwd'); const show=i.type==='password';
+  i.type=show?'text':'password';
+  $('pwd-icon').className=show?'fas fa-eye-slash':'fas fa-eye';
+}
+
+async function submitLogin(e){
+  e.preventDefault();
+  const btn=$('login-btn'), errBox=$('login-err');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Signing in...';
+  errBox.classList.add('hidden');
+  try{
+    const data = await fetch('/api/auth/login',{
+      method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',
+      body:JSON.stringify({email:$('login-email').value.trim(),password:$('login-pwd').value}),
+    });
+    const res = await data.json();
+    if(!data.ok){ $('login-err-msg').textContent=res.detail||'Invalid credentials'; errBox.classList.remove('hidden'); return; }
+    if(res.token) localStorage.setItem('taxly_token',res.token);
+    if(res.must_change_pwd){ showChangePwd(); return; }
+    _user=res.user;
+    await initApp();
+  }catch(ex){ $('login-err-msg').textContent='Connection error — is the server running?'; errBox.classList.remove('hidden'); }
+  finally{ btn.disabled=false; btn.innerHTML='<i class="fas fa-sign-in-alt"></i> Sign In'; }
+}
+
+// ══════════════════════════════════════════════
+// CHANGE PASSWORD
+// ══════════════════════════════════════════════
+function chkReqs(){
+  const p=$('cp-new').value;
+  const set=(id,ok)=>{ const el=$(id); el.classList.toggle('met',ok); el.querySelector('i').className=ok?'fas fa-check-circle':'fas fa-circle'; };
+  set('req-len',p.length>=8); set('req-upper',/[A-Z]/.test(p)); set('req-num',/[0-9]/.test(p));
+}
+async function submitChangePwd(){
+  const btn=$('cpwd-btn'),err=$('cpwd-err'),errMsg=$('cpwd-err-msg');
+  const cur=$('cp-cur').value,newp=$('cp-new').value,conf=$('cp-confirm').value;
+  if(newp!==conf){errMsg.textContent='Passwords do not match.';err.classList.remove('hidden');return;}
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';  err.classList.add('hidden');
+  try{
+    const token=localStorage.getItem('taxly_token')||'';
+    const r=await fetch('/api/auth/change-password',{method:'POST',credentials:'include',
+      headers:{'Content-Type':'application/json',...(token?{'Authorization':'Bearer '+token}:{})},
+      body:JSON.stringify({current_password:cur,new_password:newp,confirm_password:conf})});
+    const d=await r.json();
+    if(!r.ok){errMsg.textContent=d.detail||'Failed.';err.classList.remove('hidden');return;}
+    toast('Password updated! Welcome.','ok');
+    _user=await api('GET','/api/auth/me');
+    await initApp();
+  }catch(ex){errMsg.textContent='Error.';err.classList.remove('hidden');}
+  finally{btn.disabled=false;btn.innerHTML='<i class="fas fa-save"></i> Set Password & Continue';}
+}
+
+// ══════════════════════════════════════════════
+// APP INIT
+// ══════════════════════════════════════════════
+async function initApp(){
+  if(!_user){ try{_user=await api('GET','/api/auth/me');}catch(e){showLogin();return;} }
+  const u=_user;
+  $('sb-av').textContent=u.name.charAt(0).toUpperCase();
+  $('sb-name').textContent=u.name;
+  const rl={super_admin:'Super Admin',admin:'Admin',manager:'Manager',staff:'Staff',viewer:'Viewer'};
+  $('sb-role').textContent=rl[u.role]||u.role;
+  if(u.permissions?.manage_users) $('sb-usermgmt').classList.remove('hidden');
+  showApp();
+  goPage('dashboard');
+}
+
+async function doLogout(){
+  try{ const t=localStorage.getItem('taxly_token')||''; await fetch('/api/auth/logout',{method:'POST',credentials:'include',headers:t?{'Authorization':'Bearer '+t}:{}}); }catch(e){}
+  localStorage.removeItem('taxly_token'); _user=null;
+  $('login-email').value=''; $('login-pwd').value='';
+  $('login-err').classList.add('hidden');
+  showLogin('admin');
+}
+
+// ══════════════════════════════════════════════
+// PAGE ROUTER
+// ══════════════════════════════════════════════
+function setTopbar(title,sub,actions=''){
+  $('pg-title').textContent=title; $('pg-sub').textContent=sub; $('pg-actions').innerHTML=actions;
+}
+function activeSb(page){
+  qsa('.sb-item').forEach(b=>b.classList.remove('active'));
+  qsa('.sb-item').forEach(b=>{ if(b.getAttribute('onclick')?.includes("'"+page+"'")) b.classList.add('active'); });
+}
+async function goPage(page){
+  activeSb(page);
+  const body=$('pg-body');
+  body.innerHTML='<div class="empty"><div class="spinner spinner-dark" style="width:26px;height:26px;border-width:3px;margin:0 auto;"></div></div>';
+  try{
+    switch(page){
+      case 'dashboard':        return await pgDashboard(body);
+      case 'enquiries':        return await pgEnquiries(body);
+      case 'new-enquiry':      return pgNewEnquiry(body);
+      case 'clients':          return await pgClients(body);
+      case 'compliance-dash':  return await pgComplianceDash(body);
+      case 'settings':         return await pgSettings(body);
+      case 'user-management':  return await pgUserMgmt(body);
+      case 'meetings-select':  return await pgClientSelect(body,'meetings','Meetings','Select a company to manage meetings');
+      case 'post-inc-select':  return await pgClientSelect(body,'post-inc','Post-Inc Alerts','Select a company for post-incorporation alerts');
+      case 'compliance-select':return await pgClientSelect(body,'compliance','Compliance & Auditor','Select a company for compliance tracking');
+      case 'registers-select': return await pgClientSelect(body,'registers','Statutory Registers','Select a company to view and export registers');
+      default: body.innerHTML='<div class="empty"><i class="fas fa-question-circle"></i><p>Page not found</p></div>';
+    }
+  }catch(ex){ body.innerHTML=`<div class="empty" style="color:var(--c-red);"><i class="fas fa-exclamation-circle"></i><p>${ex.message}</p></div>`; }
+}
+
+// Client-select pages (open sub-pages in new tab)
+async function pgClientSelect(body,type,title,sub){
+  setTopbar(title,sub);
+  const clients=await api('GET','/api/clients/');
+  if(!clients.length){ body.innerHTML='<div class="empty"><i class="fas fa-users"></i><p>No clients yet. Convert an enquiry to a client first.</p></div>'; return; }
+  const urlMap={meetings:'/meetings/',['post-inc']:'/post-inc/',compliance:'/compliance/',registers:'/registers/'};
+  body.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px;max-width:1080px;">
+    ${clients.map(c=>`
+      <div class="card" style="cursor:pointer;transition:transform .18s,box-shadow .18s;" onclick="window.open('${urlMap[type]}${c.id}','_blank')"
+        onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.12)'"
+        onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="card-body" style="display:flex;align-items:center;gap:13px;">
+          <div style="width:44px;height:44px;background:var(--c-navy);border-radius:11px;display:flex;align-items:center;justify-content:center;color:var(--c-gold);font-weight:800;font-size:17px;flex-shrink:0;">${c.company_name.charAt(0)}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:14px;" class="truncate">${c.company_name}</div>
+            <div style="font-size:12px;color:var(--c-muted);font-family:'JetBrains Mono',monospace;">${c.client_id}</div>
+            <div style="font-size:12px;color:var(--c-muted);">${c.service_type}</div>
+          </div>
+          <i class="fas fa-external-link-alt" style="color:var(--c-muted);font-size:12px;"></i>
+        </div>
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+// ══════════════════════════════════════════════
+// DASHBOARD PAGE
+// ══════════════════════════════════════════════
+async function pgDashboard(body){
+  setTopbar('Dashboard','Real-time overview of your firm',`<button class="btn btn-gold" onclick="goPage('new-enquiry')"><i class="fas fa-plus"></i> New Enquiry</button>`);
+  const s=await api('GET','/api/dashboard/stats');
+  body.innerHTML=`
+    <div class="stats-grid">
+      ${[
+        {l:'Total Enquiries',v:s.total_enquiries,c:'var(--c-navy)',bg:'#eff3ff',ic:'fa-envelope'},
+        {l:'Pending',v:s.pending_enquiries,c:'#c2410c',bg:'#fff7ed',ic:'fa-clock'},
+        {l:'Converted',v:s.converted_clients,c:'var(--c-green)',bg:'var(--c-green-lt)',ic:'fa-user-check'},
+        {l:'Active Clients',v:s.active_registrations,c:'var(--c-blue)',bg:'var(--c-blue-lt)',ic:'fa-briefcase'},
+        {l:'Closed Leads',v:s.closed_enquiries,c:'#64748b',bg:'#f1f5f9',ic:'fa-times-circle'},
+      ].map(x=>`<div class="stat-card"><div class="stat-lbl">${x.l}</div><div class="stat-val" style="color:${x.c}">${x.v}</div><div class="stat-icon" style="background:${x.bg};color:${x.c}"><i class="fas ${x.ic}"></i></div></div>`).join('')}
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-hd"><span class="card-hd-title">Recent Pending Enquiries</span><button class="btn btn-outline btn-sm" onclick="goPage('enquiries')">View All <i class="fas fa-arrow-right"></i></button></div>
+        <div id="dash-enq"><div class="empty" style="padding:24px"><p>Loading<span class="dots"></span></p></div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-hd-title">Staff Workload</span><button class="btn btn-outline btn-sm" onclick="goPage('settings')">Manage <i class="fas fa-arrow-right"></i></button></div>
+        <div id="dash-staff">
+          ${!s.staff_workload.length ? '<div class="empty" style="padding:24px"><p>No staff added. Add staff in Settings.</p></div>' :
+            s.staff_workload.map(st=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--c-border);">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:33px;height:33px;background:var(--c-navy);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;">${st.name.charAt(0)}</div>
+                <div><div style="font-weight:600;font-size:13.5px;">${st.name}</div><div style="font-size:12px;color:var(--c-muted);">${st.designation||'Staff'}</div></div>
+              </div>
+              <div style="text-align:right;"><div style="font-size:22px;font-weight:800;color:var(--c-navy);">${st.client_count}</div><div style="font-size:11px;color:var(--c-muted);">clients</div></div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+  try{
+    const enqs=await api('GET','/api/enquiries/?status=Pending');
+    $('dash-enq').innerHTML=!enqs.length
+      ? '<div class="empty" style="padding:24px"><i class="fas fa-inbox"></i><p>No pending enquiries 🎉</p></div>'
+      : enqs.slice(0,5).map(e=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 18px;border-bottom:1px solid var(--c-border);">
+          <div><div style="font-weight:600;font-size:13.5px;">${e.proposed_company_name}</div><div style="font-size:12px;color:var(--c-muted);">${e.contact_name||'—'} · ${new Date(e.created_at).toLocaleDateString('en-IN')}</div></div>
+          <span class="badge b-pending">Pending</span>
+        </div>`).join('');
+  }catch(e2){}
+}
+
+// ══════════════════════════════════════════════
+// ENQUIRIES PAGE
+// ══════════════════════════════════════════════
+let _enqs=[];
+async function pgEnquiries(body){
+  setTopbar('Enquiries','Manage and convert leads',`<button class="btn btn-gold" onclick="goPage('new-enquiry')"><i class="fas fa-plus"></i> New Enquiry</button>`);
+  _enqs=await api('GET','/api/enquiries/');
+  renderEnquiries(body,_enqs,'');
+}
+function renderEnquiries(body,data,filter){
+  const shown=filter?data.filter(e=>e.status===filter):data;
+  const counts={all:data.length,Pending:data.filter(e=>e.status==='Pending').length,'Converted to Client':data.filter(e=>e.status==='Converted to Client').length,Closed:data.filter(e=>e.status==='Closed').length};
+  const badge=s=>s==='Pending'?'<span class="badge b-pending">Pending</span>':s==='Converted to Client'?'<span class="badge b-converted">Converted</span>':'<span class="badge b-closed">Closed</span>';
+  body.innerHTML=`
+    <div class="filter-row">
+      ${[['','All',counts.all],['Pending','Pending',counts.Pending],['Converted to Client','Converted',counts['Converted to Client']],['Closed','Closed',counts.Closed]].map(([v,l,c])=>`
+        <button class="btn ${filter===v?'btn-primary':'btn-outline'}" onclick="renderEnquiries($('pg-body'),_enqs,'${v}')">${l} <span style="opacity:.7">(${c})</span></button>`).join('')}
+    </div>
+    <div class="card">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Company</th><th>Contact</th><th>Service</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody>
+            ${!shown.length ? '<tr><td colspan="7"><div class="empty">No enquiries found</div></td></tr>' :
+              shown.map(e=>`<tr>
+                <td class="font-mono text-sm text-muted">#${e.id}</td>
+                <td><div style="font-weight:600;">${e.proposed_company_name}</div><div class="text-sm text-muted">${(e.director_names||[]).length}d · ${(e.shareholder_names||[]).length}sh</div></td>
+                <td><div class="text-sm">${safe(e.contact_name)}</div><div class="text-sm text-muted">${safe(e.contact_email)}</div></td>
+                <td><span style="font-size:12px;background:#f1f5f9;padding:2px 8px;border-radius:5px;">${e.service_type}</span></td>
+                <td>${badge(e.status)}</td>
+                <td class="text-sm text-muted">${new Date(e.created_at).toLocaleDateString('en-IN')}</td>
+                <td><div style="display:flex;gap:5px;">
+                  <button class="btn btn-outline btn-xs" onclick="viewEnquiry(${e.id})"><i class="fas fa-eye"></i></button>
+                  ${e.status==='Pending'?`
+                    <button class="btn btn-success btn-xs" onclick="convertEnq(${e.id})" title="Convert"><i class="fas fa-user-plus"></i></button>
+                    <button class="btn btn-danger btn-xs"  onclick="closeEnq(${e.id})"   title="Close"><i class="fas fa-times"></i></button>
+                  `:''}
+                </div></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+async function viewEnquiry(id){
+  const e=_enqs.find(x=>x.id===id); if(!e) return;
+  openModal(`
+    <div class="mo-hd"><span class="mo-title">${e.proposed_company_name}</span><button class="mo-close" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="g2" style="margin-bottom:14px;">
+      <div style="background:var(--c-bg);border-radius:10px;padding:14px;">
+        <div class="text-sm" style="font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">Company</div>
+        <div class="text-sm">Auth Capital: ${fmtCur(e.authorised_capital)}</div>
+        <div class="text-sm">Paid-up: ${fmtCur(e.paidup_capital)}</div>
+        <div class="text-sm">${safe(e.company_address)}</div>
+      </div>
+      <div style="background:var(--c-bg);border-radius:10px;padding:14px;">
+        <div class="text-sm" style="font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">Contact</div>
+        <div class="text-sm">${safe(e.contact_name)}</div>
+        <div class="text-sm">${safe(e.contact_email)}</div>
+        <div class="text-sm">${safe(e.contact_phone)}</div>
+      </div>
+    </div>
+    ${(e.director_names||[]).length?`<div style="margin-bottom:12px;"><div class="text-sm" style="font-weight:700;color:var(--c-muted);margin-bottom:6px;">DIRECTORS</div><div style="display:flex;gap:5px;flex-wrap:wrap;">${e.director_names.map(d=>`<span style="background:var(--c-blue-lt);color:var(--c-blue);font-size:12.5px;padding:3px 9px;border-radius:20px;">${d}</span>`).join('')}</div></div>`:''}
+    <div style="border-top:1px solid var(--c-border);padding-top:14px;margin-top:4px;">
+      <div class="text-sm" style="font-weight:700;color:var(--c-muted);margin-bottom:10px;"><i class="fas fa-robot" style="color:var(--c-gold);"></i> AI Documents</div>
+      <div id="mo-drafts"><div class="text-sm text-muted">Loading<span class="dots"></span></div></div>
+    </div>
+    ${e.status==='Pending'?`<div style="border-top:1px solid var(--c-border);padding-top:14px;margin-top:10px;display:flex;gap:9px;">
+      <button class="btn btn-success" onclick="convertEnq(${e.id});closeModal()"><i class="fas fa-user-plus"></i> Convert to Client</button>
+      <button class="btn btn-danger"  onclick="closeEnq(${e.id});closeModal()"><i class="fas fa-times"></i> Close</button>
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+    </div>`:`<div style="padding-top:10px;"><button class="btn btn-outline" onclick="closeModal()">Close</button></div>`}
+  `);
+  try{
+    const drafts=await api('GET',`/api/ai/drafts/${id}`);
+    const names={thank_you_letter:'📄 Thank-You',document_checklist:'📋 Checklist',price_quotation:'💰 Quotation'};
+    const el=$('mo-drafts');
+    if(!drafts.length){ el.innerHTML='<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 13px;font-size:13px;color:#92400e;"><i class="fas fa-hourglass-half" style="color:var(--c-gold);"></i> AI drafts generating, check back shortly.</div>'; return; }
+    const W={}; drafts.forEach(d=>{W[d.id]=d.content;});
+    el.innerHTML=`<div style="display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap;">${drafts.map((d,i)=>`<button onclick="showDraft(${d.id},this)" class="btn btn-sm draft-tab ${i===0?'btn-primary':'btn-outline'}" style="font-size:12px;">${names[d.draft_type]||d.draft_type}</button>`).join('')}</div>
+      <div id="draft-body" style="background:var(--c-bg);border-radius:9px;padding:14px;font-size:13px;line-height:1.7;white-space:pre-wrap;max-height:240px;overflow-y:auto;">${drafts[0]?.content||''}</div>`;
+    window.__drafts=W;
+  }catch(e2){}
+}
+function showDraft(id,btn){ qsa('.draft-tab').forEach(b=>{b.classList.remove('btn-primary');b.classList.add('btn-outline');}); btn.classList.add('btn-primary');btn.classList.remove('btn-outline'); $('draft-body').textContent=(window.__drafts||{})[id]||''; }
+async function convertEnq(id){ if(!confirm('Convert to client?')) return; try{ const c=await api('POST',`/api/enquiries/${id}/convert`); toast(`Client created: ${c.client_id}`,'ok'); goPage('enquiries'); }catch(e){toast(e.message,'err');} }
+async function closeEnq(id){ if(!confirm('Close this enquiry?')) return; try{ await api('PATCH',`/api/enquiries/${id}/status`,{status:'Closed'}); toast('Enquiry closed','ok'); goPage('enquiries'); }catch(e){toast(e.message,'err');} }
+
+// ══════════════════════════════════════════════
+// NEW ENQUIRY PAGE
+// ══════════════════════════════════════════════
+function pgNewEnquiry(body){
+  setTopbar('New Enquiry','Register a new company incorporation enquiry');
+  body.innerHTML=`
+    <div style="max-width:820px;">
+      <div class="card">
+        <div class="card-hd"><span class="card-hd-title">Enquiry Details</span><span style="background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:6px 13px;font-size:12.5px;color:#92400e;font-weight:600;"><i class="fas fa-robot"></i> AI drafts auto-generated on submit</span></div>
+        <div class="card-body">
+          <div class="g2">
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--c-border);">Company Details</div>
+              <div class="fg"><label>Proposed Company Name *</label><input type="text" class="fi" id="ne-name" placeholder="Acme Technologies Pvt Ltd" required/></div>
+              <div class="fg"><label>Company Address</label><textarea class="ft" id="ne-addr" placeholder="Registered office address" style="min-height:60px;"></textarea></div>
+              <div class="g2" style="gap:10px;">
+                <div class="fg"><label>Auth Capital (₹)</label><input type="number" class="fi" id="ne-auth" placeholder="100000"/></div>
+                <div class="fg"><label>Paid-up Capital (₹)</label><input type="number" class="fi" id="ne-paidup" placeholder="100000"/></div>
+              </div>
+              <div class="fg"><label>Service Type</label>
+                <select class="fs" id="ne-service">
+                  <option value="Company Incorporation">Company Incorporation</option>
+                  <option value="GST Registration">GST Registration</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--c-border);">Contact & Stakeholders</div>
+              <div class="fg"><label>Contact Person</label><input type="text" class="fi" id="ne-contact" placeholder="Full name"/></div>
+              <div class="g2" style="gap:10px;">
+                <div class="fg"><label>Email</label><input type="email" class="fi" id="ne-email" placeholder="email@example.com"/></div>
+                <div class="fg"><label>Phone</label><input type="tel" class="fi" id="ne-phone" placeholder="+91 98765 43210"/></div>
+              </div>
+              <div class="fg"><label>Directors</label>
+                <div id="dir-list"><div class="dir-e" style="display:flex;gap:7px;margin-bottom:7px;"><input type="text" class="fi dir-n" placeholder="Director 1"/><button onclick="this.closest('.dir-e').remove()" class="btn btn-danger btn-sm" style="flex-shrink:0;"><i class="fas fa-times"></i></button></div></div>
+                <button onclick="addDir()" class="btn btn-outline btn-sm" style="width:100%;justify-content:center;margin-top:3px;"><i class="fas fa-plus"></i> Add Director</button>
+              </div>
+              <div class="fg"><label>Shareholders</label>
+                <div id="sh-list"><div class="sh-e" style="display:flex;gap:7px;margin-bottom:7px;"><input type="text" class="fi sh-n" placeholder="Shareholder 1"/><input type="number" class="fi sh-p" placeholder="%" style="width:65px;flex-shrink:0;" min="0" max="100"/><button onclick="this.closest('.sh-e').remove()" class="btn btn-danger btn-sm" style="flex-shrink:0;"><i class="fas fa-times"></i></button></div></div>
+                <button onclick="addSh()" class="btn btn-outline btn-sm" style="width:100%;justify-content:center;margin-top:3px;"><i class="fas fa-plus"></i> Add Shareholder</button>
+              </div>
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--c-border);padding-top:16px;display:flex;justify-content:flex-end;gap:10px;">
+            <button class="btn btn-outline" onclick="goPage('enquiries')">Cancel</button>
+            <button class="btn btn-gold" id="ne-sub" onclick="submitEnquiry()" style="min-width:150px;justify-content:center;"><i class="fas fa-paper-plane"></i> Submit Enquiry</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+function addDir(){ const l=$('dir-list'),c=l.querySelectorAll('.dir-e').length+1,d=document.createElement('div'); d.className='dir-e'; d.style.cssText='display:flex;gap:7px;margin-bottom:7px;'; d.innerHTML=`<input type="text" class="fi dir-n" placeholder="Director ${c}"/><button onclick="this.closest('.dir-e').remove()" class="btn btn-danger btn-sm" style="flex-shrink:0;"><i class="fas fa-times"></i></button>`; l.appendChild(d); }
+function addSh(){ const l=$('sh-list'),c=l.querySelectorAll('.sh-e').length+1,d=document.createElement('div'); d.className='sh-e'; d.style.cssText='display:flex;gap:7px;margin-bottom:7px;'; d.innerHTML=`<input type="text" class="fi sh-n" placeholder="Shareholder ${c}"/><input type="number" class="fi sh-p" placeholder="%" style="width:65px;flex-shrink:0;" min="0" max="100"/><button onclick="this.closest('.sh-e').remove()" class="btn btn-danger btn-sm" style="flex-shrink:0;"><i class="fas fa-times"></i></button>`; l.appendChild(d); }
+async function submitEnquiry(){
+  const btn=$('ne-sub'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  const dirs=[...document.querySelectorAll('.dir-n')].map(i=>i.value.trim()).filter(Boolean);
+  const shE=[...document.querySelectorAll('.sh-e')]; const shs=[],sp={};
+  shE.forEach(e=>{ const n=e.querySelector('.sh-n').value.trim(),p=parseFloat(e.querySelector('.sh-p').value)||0; if(n){shs.push(n);sp[n]=p;} });
+  try{
+    await api('POST','/api/enquiries/',{
+      proposed_company_name:$('ne-name').value.trim(),company_address:$('ne-addr').value.trim()||null,
+      authorised_capital:parseFloat($('ne-auth').value)||null,paidup_capital:parseFloat($('ne-paidup').value)||null,
+      service_type:$('ne-service').value,contact_name:$('ne-contact').value.trim()||null,
+      contact_email:$('ne-email').value.trim()||null,contact_phone:$('ne-phone').value.trim()||null,
+      director_names:dirs,shareholder_names:shs,shareholding_pattern:sp,
+    });
+    toast('Enquiry submitted! AI drafts generating.','ok');
+    setTimeout(()=>goPage('enquiries'),1100);
+  }catch(e){ toast(e.message,'err'); btn.disabled=false; btn.innerHTML='<i class="fas fa-paper-plane"></i> Submit Enquiry'; }
+}
+
+// ══════════════════════════════════════════════
+// CLIENTS PAGE
+// ══════════════════════════════════════════════
+async function pgClients(body){
+  setTopbar('Clients','Manage active client profiles');
+  const clients=await api('GET','/api/clients/');
+  body.innerHTML=`
+    <div class="card">
+      <div class="card-hd"><span class="card-hd-title">Active Clients (${clients.length})</span><input type="text" class="fi" placeholder="Search..." style="width:200px;padding:7px 11px;" oninput="filterCl(this.value)"/></div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>Client ID</th><th>Company</th><th>Contact</th><th>Service</th><th>Since</th><th>Actions</th></tr></thead>
+        <tbody id="cl-tbody">
+          ${!clients.length ? '<tr><td colspan="6"><div class="empty">No clients yet. Convert an enquiry first.</div></td></tr>' :
+            clients.map(c=>`<tr data-s="${c.company_name.toLowerCase()} ${c.client_id.toLowerCase()}">
+              <td><span class="font-mono text-sm" style="background:var(--c-blue-lt);color:var(--c-blue);padding:3px 8px;border-radius:5px;font-weight:600;">${c.client_id}</span></td>
+              <td style="font-weight:600;">${c.company_name}</td>
+              <td><div class="text-sm">${safe(c.contact_name)}</div><div class="text-sm text-muted">${safe(c.contact_email)}</div></td>
+              <td><span class="text-sm" style="background:#f1f5f9;padding:2px 7px;border-radius:5px;">${c.service_type}</span></td>
+              <td class="text-sm text-muted">${new Date(c.created_at).toLocaleDateString('en-IN')}</td>
+              <td><div style="display:flex;gap:5px;flex-wrap:wrap;">
+                <button class="btn btn-outline btn-xs" onclick="viewClient('${c.client_id}')"><i class="fas fa-eye"></i></button>
+                <a href="/company/${c.id}" target="_blank" class="btn btn-gold btn-xs"><i class="fas fa-building"></i></a>
+                <a href="/registers/${c.id}" target="_blank" class="btn btn-success btn-xs"><i class="fas fa-book"></i></a>
+                <a href="/compliance/${c.id}" target="_blank" class="btn btn-outline btn-xs" style="color:var(--c-blue);"><i class="fas fa-file-alt"></i></a>
+                <a href="/meetings/${c.id}" target="_blank" class="btn btn-outline btn-xs"><i class="fas fa-calendar-check"></i></a>
+              </div></td>
+            </tr>`).join('')}
+        </tbody></table>
+      </div>
+    </div>`;
+}
+function filterCl(q){ q=q.toLowerCase(); qsa('#cl-tbody tr').forEach(tr=>tr.style.display=tr.dataset.s?.includes(q)?'':'none'); }
+async function viewClient(cid){
+  const d=await api('GET',`/api/clients/${cid}`);
+  const comp=d.workflow.filter(s=>s.is_completed).length,pct=d.workflow.length?Math.round(comp/d.workflow.length*100):0;
+  openModal(`
+    <div class="mo-hd"><div><span class="mo-title">${d.company_name}</span><div class="font-mono text-sm text-muted">${d.client_id}</div></div><button class="mo-close" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="g2" style="margin-bottom:14px;">
+      <div style="background:var(--c-bg);border-radius:10px;padding:13px;"><div class="text-sm" style="font-weight:700;color:var(--c-muted);text-transform:uppercase;margin-bottom:7px;">Contact</div><div class="text-sm">${safe(d.contact_name)}</div><div class="text-sm">${safe(d.contact_email)}</div></div>
+      <div style="background:var(--c-bg);border-radius:10px;padding:13px;"><div class="text-sm" style="font-weight:700;color:var(--c-muted);text-transform:uppercase;margin-bottom:7px;">Staff</div><div class="text-sm">${safe(d.staff_name,'Not assigned')}</div><div class="text-sm text-muted">${safe(d.staff_email)}</div></div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:7px;"><span class="text-sm" style="font-weight:600;">Progress</span><span class="text-sm" style="font-weight:700;color:var(--c-navy);">${comp}/${d.workflow.length} — ${pct}%</span></div>
+      <div class="progress-wrap"><div class="progress-fill" style="width:${pct}%;"></div></div>
+      <div class="text-sm text-muted" style="margin-top:4px;">Current: <strong>${d.current_milestone}</strong></div>
+    </div>
+    ${d.workflow.map((s,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:${s.is_completed?'#f0fdf4':'#f8f9fc'};border:1px solid ${s.is_completed?'#bbf7d0':'var(--c-border)'};border-radius:9px;margin-bottom:5px;">
+      <div style="width:25px;height:25px;border-radius:50%;background:${s.is_completed?'var(--c-green)':'#e2e8f0'};color:${s.is_completed?'#fff':'#94a3b8'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">
+        ${s.is_completed?'<i class="fas fa-check"></i>':(i+1)}
+      </div>
+      <span style="font-size:13.5px;font-weight:${s.is_completed?600:400};">${s.stage_name}</span>
+      ${s.is_completed&&s.completed_at?`<span class="text-sm" style="color:var(--c-green);margin-left:auto;">${fmtDate(s.completed_at)}</span>`:''}
+    </div>`).join('')}
+    <div style="padding-top:12px;"><button class="btn btn-outline" onclick="closeModal()">Close</button></div>
+  `);
+}
+
+// ══════════════════════════════════════════════
+// COMPLIANCE DASHBOARD
+// ══════════════════════════════════════════════
+async function pgComplianceDash(body){
+  setTopbar('Compliance Dashboard','All pending deadlines & auditor renewals across all companies');
+  const [rem,ren]=await Promise.all([api('GET','/api/compliance/dashboard/all-reminders'),api('GET','/api/compliance/dashboard/auditor-renewals')]);
+  const ov=rem.filter(r=>r.status==='Overdue').length,ds=rem.filter(r=>r.status==='Due Soon').length,up=rem.filter(r=>r.status==='Upcoming').length;
+  body.innerHTML=`
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card"><div class="stat-lbl">Overdue</div><div class="stat-val" style="color:var(--c-red);">${ov}</div><div class="stat-icon" style="background:var(--c-red-lt);color:var(--c-red);"><i class="fas fa-exclamation-circle"></i></div></div>
+      <div class="stat-card"><div class="stat-lbl">Due in 30 Days</div><div class="stat-val" style="color:var(--c-amber);">${ds}</div><div class="stat-icon" style="background:var(--c-amber-lt);color:var(--c-amber);"><i class="fas fa-clock"></i></div></div>
+      <div class="stat-card"><div class="stat-lbl">Upcoming</div><div class="stat-val" style="color:var(--c-blue);">${up}</div><div class="stat-icon" style="background:var(--c-blue-lt);color:var(--c-blue);"><i class="fas fa-calendar"></i></div></div>
+      <div class="stat-card"><div class="stat-lbl">Auditor Renewals</div><div class="stat-val" style="color:var(--c-purple);">${ren.length}</div><div class="stat-icon" style="background:var(--c-purple-lt);color:var(--c-purple);"><i class="fas fa-sync"></i></div></div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-hd"><span class="card-hd-title">All Pending Compliances</span>
+          <select class="fs" style="width:130px;padding:6px 9px;font-size:12.5px;" id="comp-filter" onchange="filterCompTbl()">
+            <option value="">All Status</option><option value="Overdue">Overdue</option><option value="Due Soon">Due Soon</option><option value="Upcoming">Upcoming</option>
+          </select>
+        </div>
+        <div class="tbl-wrap">
+          <table id="comp-tbl"><thead><tr><th>Company</th><th>Compliance</th><th>Due</th><th>Status</th><th></th></tr></thead>
+          <tbody id="comp-tbody">
+            ${!rem.length ? '<tr><td colspan="5"><div class="empty">All caught up! 🎉</div></td></tr>' :
+              rem.map(r=>{ const sc=r.status==='Overdue'?'b-overdue':r.status==='Due Soon'?'b-due':'b-upcoming'; const d=r.days_remaining;
+                return `<tr data-status="${r.status}">
+                  <td><div style="font-weight:600;font-size:13px;">${r.company_name}</div>${r.financial_year?`<div class="text-sm text-muted">FY ${r.financial_year}</div>`:''}</td>
+                  <td><div style="font-weight:600;font-size:13px;">${r.compliance_name}</div>${r.form_number?`<span class="font-mono text-sm" style="background:var(--c-blue-lt);color:var(--c-blue);padding:1px 6px;border-radius:4px;">${r.form_number}</span>`:''}</td>
+                  <td><div class="text-sm">${r.due_date?fmtDate(r.due_date):'—'}</div><div class="text-sm" style="font-weight:700;color:${d!==null&&d<=0?'var(--c-red)':d!==null&&d<=7?'#c2410c':'var(--c-muted)'};">${d!==null?(d<0?Math.abs(d)+'d over':d===0?'Today!':d+'d left'):'—'}</div></td>
+                  <td><span class="badge ${sc}">${r.status}</span></td>
+                  <td><a href="/compliance/${r.company_id}" target="_blank" class="btn btn-outline btn-xs"><i class="fas fa-arrow-right"></i></a></td>
+                </tr>`;}).join('')}
+          </tbody></table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-hd-title">🔄 Auditor Renewals</span></div>
+        ${!ren.length ? '<div class="empty" style="padding:24px">No renewals due in 180 days ✅</div>' :
+          ren.map(r=>`<div style="padding:13px 17px;border-bottom:1px solid var(--c-border);display:flex;align-items:center;justify-content:space-between;gap:9px;">
+            <div><div style="font-weight:600;font-size:13.5px;">${r.company_name}</div><div class="text-sm text-muted">${r.firm_name}</div><div class="text-sm" style="font-weight:700;color:${r.urgent?'var(--c-red)':'var(--c-amber)'};">${r.days_to_renewal<=0?'Overdue!':r.days_to_renewal+' days'}</div></div>
+            <a href="/compliance/${r.company_id}" target="_blank" class="btn btn-xs ${r.urgent?'btn-danger':'btn-outline'}"><i class="fas fa-arrow-right"></i></a>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  window.__compAll=rem;
+}
+function filterCompTbl(){ const s=$('comp-filter')?.value; qsa('#comp-tbody tr').forEach(tr=>tr.style.display=(!s||tr.dataset.status===s)?'':'none'); }
+
+// ══════════════════════════════════════════════
+// SETTINGS PAGE
+// ══════════════════════════════════════════════
+async function pgSettings(body){
+  setTopbar('Settings','Manage staff and workflow stages');
+  const [staff,wf]=await Promise.all([api('GET','/api/staff/'),api('GET','/api/workflows/')]);
+  body.innerHTML=`
+    <div class="g2">
+      <div class="card">
+        <div class="card-hd"><span class="card-hd-title"><i class="fas fa-users" style="color:var(--c-navy);margin-right:6px;"></i> Staff Members</span><button class="btn btn-gold btn-sm" onclick="openAddStaff()"><i class="fas fa-plus"></i> Add Staff</button></div>
+        <div id="staff-body">
+          ${!staff.length ? '<div class="empty" style="padding:24px">No staff added yet</div>' :
+            staff.map(s=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--c-border);">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:36px;height:36px;background:var(--c-navy);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;">${s.name.charAt(0)}</div>
+                <div><div style="font-weight:600;font-size:14px;">${s.name}</div><div class="text-sm text-muted">${s.email}</div>${s.designation?`<div class="text-sm text-muted">${s.designation}</div>`:''}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="text-align:right;"><div style="font-size:20px;font-weight:800;color:var(--c-navy);">${s.active_client_count}</div><div style="font-size:11px;color:var(--c-muted);">clients</div></div>
+                <button onclick="rmStaff(${s.id})" class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-hd-title"><i class="fas fa-project-diagram" style="color:var(--c-navy);margin-right:6px;"></i> Workflow Stages</span>
+          <div style="display:flex;gap:7px;">
+            <button onclick="seedWF()" class="btn btn-outline btn-sm"><i class="fas fa-magic"></i> Seed Defaults</button>
+            <button onclick="openAddWF()" class="btn btn-gold btn-sm"><i class="fas fa-plus"></i> Add Stage</button>
+          </div>
+        </div>
+        <div class="tab-strip" style="margin:10px 14px 0;">
+          ${['Company Incorporation','GST Registration','Other'].map((t,i)=>`<button class="tab-btn ${i===0?'active':''}" onclick="filterWF('${t}',this)">${t}</button>`).join('')}
+        </div>
+        <div id="wf-body" data-filter="Company Incorporation">
+          ${renderWFList(wf,'Company Incorporation')}
+        </div>
+      </div>
+    </div>`;
+  window.__wfall=wf;
+}
+function renderWFList(wf,filter){ const f=wf.filter(w=>w.service_type===filter).sort((a,b)=>a.stage_order-b.stage_order); if(!f.length) return '<div class="empty" style="padding:24px">No stages. Click Seed Defaults.</div>'; return f.map(w=>`<div style="display:flex;align-items:center;gap:10px;padding:11px 18px;border-bottom:1px solid var(--c-border);"><div style="width:26px;height:26px;background:var(--c-navy);border-radius:7px;display:flex;align-items:center;justify-content:center;color:var(--c-gold);font-size:12px;font-weight:700;flex-shrink:0;">${w.stage_order}</div><div style="flex:1;"><div style="font-weight:600;font-size:13.5px;">${w.stage_name}</div>${w.description?`<div class="text-sm text-muted">${w.description}</div>`:''}</div><button onclick="rmWF(${w.id})" class="btn btn-danger btn-xs"><i class="fas fa-times"></i></button></div>`).join(''); }
+function filterWF(filter,btn){ qsa('.tab-btn').forEach(b=>{b.classList.remove('active');}); btn.classList.add('active'); $('wf-body').innerHTML=renderWFList(window.__wfall||[],filter); $('wf-body').dataset.filter=filter; }
+
+function openAddStaff(){ openModal(`<div class="mo-hd"><span class="mo-title">Add Staff Member</span><button class="mo-close" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+  <div class="fg"><label>Full Name *</label><input type="text" class="fi" id="sf-n" placeholder="CA Priya Sharma"/></div>
+  <div class="fg"><label>Email *</label><input type="email" class="fi" id="sf-e" placeholder="priya@firm.com"/></div>
+  <div class="g2"><div class="fg"><label>Phone</label><input type="text" class="fi" id="sf-p" placeholder="+91 ..."/></div><div class="fg"><label>Designation</label><input type="text" class="fi" id="sf-d" placeholder="Associate CA"/></div></div>
+  <div style="display:flex;justify-content:flex-end;gap:9px;padding-top:10px;"><button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveStaff()"><i class="fas fa-save"></i> Save</button></div>`); }
+async function saveStaff(){ try{ await api('POST','/api/staff/',{name:$('sf-n').value.trim(),email:$('sf-e').value.trim(),phone:$('sf-p').value.trim()||null,designation:$('sf-d').value.trim()||null}); toast('Staff added','ok'); closeModal(); goPage('settings'); }catch(e){toast(e.message,'err');} }
+async function rmStaff(id){ if(!confirm('Deactivate?')) return; try{ await api('DELETE',`/api/staff/${id}`); toast('Deactivated','ok'); goPage('settings'); }catch(e){toast(e.message,'err');} }
+
+function openAddWF(){ openModal(`<div class="mo-hd"><span class="mo-title">Add Workflow Stage</span><button class="mo-close" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+  <div class="fg"><label>Service Type</label><select class="fs" id="wf-st"><option value="Company Incorporation">Company Incorporation</option><option value="GST Registration">GST Registration</option><option value="Other">Other</option></select></div>
+  <div class="fg"><label>Stage Name *</label><input type="text" class="fi" id="wf-sn" placeholder="e.g. Name Approval"/></div>
+  <div class="fg"><label>Order *</label><input type="number" class="fi" id="wf-so" placeholder="1" min="1"/></div>
+  <div class="fg"><label>Description</label><textarea class="ft" id="wf-sd" style="min-height:55px;" placeholder="Brief description..."></textarea></div>
+  <div style="display:flex;justify-content:flex-end;gap:9px;padding-top:10px;"><button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveWF()"><i class="fas fa-save"></i> Save</button></div>`); }
+async function saveWF(){ try{ await api('POST','/api/workflows/',{service_type:$('wf-st').value,stage_name:$('wf-sn').value.trim(),stage_order:parseInt($('wf-so').value),description:$('wf-sd').value.trim()||null}); toast('Stage added','ok'); closeModal(); goPage('settings'); }catch(e){toast(e.message,'err');} }
+async function rmWF(id){ if(!confirm('Remove stage?')) return; try{ await api('DELETE',`/api/workflows/${id}`); toast('Removed','ok'); goPage('settings'); }catch(e){toast(e.message,'err');} }
+async function seedWF(){ try{ const r=await api('POST','/api/workflows/seed-defaults'); toast(r.message,'ok'); goPage('settings'); }catch(e){toast(e.message,'err');} }
+
+// ══════════════════════════════════════════════
+// USER MANAGEMENT PAGE
+// ══════════════════════════════════════════════
+async function pgUserMgmt(body){
+  setTopbar('User Management','Manage accounts, roles and access',`<button class="btn btn-gold" onclick="openCreateUser()"><i class="fas fa-plus"></i> Add User</button>`);
+  const [users,staffList]=await Promise.all([api('GET','/api/auth/users'),api('GET','/api/staff/')]);
+  window.__staffList=staffList;
+  const rl={super_admin:'Super Admin',admin:'Admin',manager:'Manager',staff:'Staff',viewer:'Viewer'};
+  const rb={super_admin:'b-super',admin:'b-admin',manager:'b-manager',staff:'b-staff',viewer:'b-viewer'};
+  body.innerHTML=`
+    <div class="card" style="margin-bottom:18px;">
+      <div class="card-hd"><span class="card-hd-title">All Accounts (${users.length})</span><input type="text" class="fi" placeholder="Search..." style="width:200px;padding:7px 11px;" oninput="filterUsers(this.value)"/></div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last Login</th><th>Logins</th><th>Actions</th></tr></thead>
+        <tbody id="u-tbody">
+          ${users.map(u=>`<tr data-s="${u.name.toLowerCase()} ${u.email.toLowerCase()}">
+            <td><div style="display:flex;align-items:center;gap:9px;">
+              <div style="width:32px;height:32px;background:var(--c-navy);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;">${u.name.charAt(0).toUpperCase()}</div>
+              <div><div style="font-weight:600;font-size:13.5px;">${u.name}</div>${u.must_change_pwd?'<span style="font-size:11px;background:#fffbeb;color:#d97706;padding:1px 6px;border-radius:4px;">Must change pwd</span>':''}</div>
+            </div></td>
+            <td class="text-sm">${u.email}</td>
+            <td><span class="badge ${rb[u.role]||''}">${rl[u.role]||u.role}</span></td>
+            <td>${u.is_active?'<span class="badge b-converted">● Active</span>':'<span class="badge b-closed">● Inactive</span>'}</td>
+            <td class="text-sm text-muted">${u.last_login?new Date(u.last_login).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'Never'}</td>
+            <td style="text-align:center;font-weight:600;">${u.login_count||0}</td>
+            <td><div style="display:flex;gap:5px;">
+              <button onclick='editUser(${JSON.stringify(u).replace(/\'/g,"&#39;")})' class="btn btn-outline btn-xs"><i class="fas fa-edit"></i></button>
+              <button onclick="resetPwd(${u.id},'${u.name.replace(/'/g,'')}')" class="btn btn-outline btn-xs" style="color:var(--c-amber);"><i class="fas fa-key"></i></button>
+              ${u.is_active?`<button onclick="deactivateU(${u.id},'${u.name.replace(/'/g,'')}')" class="btn btn-danger btn-xs"><i class="fas fa-ban"></i></button>`:
+                            `<button onclick="reactivateU(${u.id})" class="btn btn-success btn-xs"><i class="fas fa-redo"></i></button>`}
+            </div></td>
+          </tr>`).join('')}
+        </tbody></table>
+      </div>
+    </div>
+    <div class="card" id="audit-box"></div>`;
+  try{
+    const logs=await api('GET','/api/auth/audit-log?limit=30');
+    const ac={LOGIN_SUCCESS:'var(--c-green)',LOGIN_FAILED:'var(--c-red)',USER_CREATED:'var(--c-blue)',PASSWORD_RESET:'var(--c-amber)',USER_DEACTIVATED:'var(--c-red)'};
+    $('audit-box').innerHTML=`<div class="card-hd"><span class="card-hd-title"><i class="fas fa-history" style="margin-right:6px;color:var(--c-navy);"></i> Audit Log</span></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Resource</th><th>IP</th></tr></thead><tbody>
+        ${logs.map(l=>`<tr><td class="text-sm text-muted">${l.created_at?new Date(l.created_at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—'}</td>
+          <td class="text-sm">${l.user_email||'system'}</td>
+          <td><span class="font-mono text-sm" style="background:#f1f5f9;padding:2px 7px;border-radius:4px;color:${ac[l.action]||'var(--c-navy)'};">${l.action}</span></td>
+          <td class="text-sm">${l.resource||'—'}${l.resource_id?` #${l.resource_id}`:''}</td>
+          <td class="text-sm text-muted">${l.ip_address||'—'}</td>
+        </tr>`).join('')}
+      </tbody></table></div>`;
+  }catch(e2){}
+}
+function filterUsers(q){ q=q.toLowerCase(); qsa('#u-tbody tr').forEach(tr=>tr.style.display=tr.dataset.s?.includes(q)?'':'none'); }
+
+function openCreateUser(){
+  const so=(window.__staffList||[]).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  openModal(`<div class="mo-hd"><span class="mo-title">Add User Account</span><button class="mo-close" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="g2">
+      <div class="fg span2"><label>Full Name *</label><input type="text" class="fi" id="cu-n" placeholder="CA Priya Sharma" required/></div>
+      <div class="fg"><label>Email *</label><input type="email" class="fi" id="cu-e" placeholder="priya@firm.com" required/></div>
+      <div class="fg"><label>Phone</label><input type="text" class="fi" id="cu-p" placeholder="+91 ..."/></div>
+      <div class="fg"><label>Role</label><select class="fs" id="cu-r"><option value="staff">Staff</option><option value="viewer">Viewer</option><option value="manager">Manager</option><option value="admin">Admin</option><option value="super_admin">Super Admin</option></select></div>
+      <div class="fg"><label>Linked Staff</label><select class="fs" id="cu-s"><option value="">— Not linked —</option>${so}</select></div>
+      <div class="fg span2"><label>Password (blank = auto-generate)</label><input type="text" class="fi" id="cu-pw" placeholder="Leave blank for secure temp password"/></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:9px;padding-top:12px;"><button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="saveUser()"><i class="fas fa-user-plus"></i> Create Account</button></div>`);
+}
+async function saveUser(){
+  const payload={name:$('cu-n').value.trim(),email:$('cu-e').value.trim(),phone:$('cu-p').value.trim()||null,role:$('cu-r').value,staff_id:parseInt($('cu-s').value)||null};
+  const pw=$('cu-pw').value.trim(); if(pw) payload.password=pw;
+  try{
+    const r=await api('POST','/api/auth/users',payload); closeModal();
+    if(r.temp_password){ openModal(`<div style="text-align:center;padding:18px 10px;"><div style="font-size:40px;margin-bottom:13px;">🎉</div><h2 style="font-size:17px;font-weight:800;margin-bottom:8px;">Account Created!</h2><p style="font-size:13.5px;color:var(--c-muted);margin-bottom:16px;">Share this temporary password.</p><div style="background:var(--c-bg);border-radius:10px;padding:14px;margin-bottom:16px;"><div class="font-mono" style="font-size:22px;font-weight:800;color:var(--c-navy);letter-spacing:2px;">${r.temp_password}</div></div><button class="btn btn-primary" style="width:100%;" onclick="closeModal();goPage('user-management')">Done</button></div>`); }
+    else{ toast('User created','ok'); goPage('user-management'); }
+  }catch(e){toast(e.message,'err');}
+}
+function editUser(u){
+  const so=(window.__staffList||[]).map(s=>`<option value="${s.id}" ${s.id===u.staff_id?'selected':''}>${s.name}</option>`).join('');
+  openModal(`<div class="mo-hd"><span class="mo-title">Edit User</span><button class="mo-close" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="g2">
+      <div class="fg span2"><label>Full Name</label><input type="text" class="fi" id="eu-n" value="${u.name}"/></div>
+      <div class="fg"><label>Phone</label><input type="text" class="fi" id="eu-p" value="${u.phone||''}"/></div>
+      <div class="fg"><label>Role</label><select class="fs" id="eu-r"><option value="staff" ${u.role==='staff'?'selected':''}>Staff</option><option value="viewer" ${u.role==='viewer'?'selected':''}>Viewer</option><option value="manager" ${u.role==='manager'?'selected':''}>Manager</option><option value="admin" ${u.role==='admin'?'selected':''}>Admin</option><option value="super_admin" ${u.role==='super_admin'?'selected':''}>Super Admin</option></select></div>
+      <div class="fg span2"><label>Linked Staff</label><select class="fs" id="eu-s"><option value="">— Not linked —</option>${so}</select></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:9px;padding-top:12px;"><button class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="updateUser(${u.id})"><i class="fas fa-save"></i> Save</button></div>`);
+}
+async function updateUser(id){ try{ await api('PATCH',`/api/auth/users/${id}`,{name:$('eu-n').value.trim(),phone:$('eu-p').value.trim()||null,role:$('eu-r').value,staff_id:parseInt($('eu-s').value)||null}); toast('Updated','ok'); closeModal(); goPage('user-management'); }catch(e){toast(e.message,'err');} }
+async function resetPwd(id,name){ if(!confirm(`Reset password for ${name}?`)) return; try{ const r=await api('POST',`/api/auth/users/${id}/reset-password`); openModal(`<div style="text-align:center;padding:18px 10px;"><div style="font-size:36px;margin-bottom:13px;">🔑</div><h2 style="font-size:17px;font-weight:800;margin-bottom:8px;">Password Reset</h2><p style="font-size:13.5px;color:var(--c-muted);margin-bottom:16px;">New temp password for ${name}:</p><div style="background:var(--c-bg);border-radius:10px;padding:14px;margin-bottom:16px;"><div class="font-mono" style="font-size:22px;font-weight:800;color:var(--c-navy);letter-spacing:2px;">${r.temp_password}</div></div><button class="btn btn-primary" style="width:100%;" onclick="closeModal()">Done</button></div>`); }catch(e){toast(e.message,'err');} }
+async function deactivateU(id,name){ if(!confirm(`Deactivate ${name}?`)) return; try{ await api('DELETE',`/api/auth/users/${id}`); toast('Deactivated','ok'); goPage('user-management'); }catch(e){toast(e.message,'err');} }
+async function reactivateU(id){ try{ await api('PATCH',`/api/auth/users/${id}`,{is_active:true}); toast('Reactivated','ok'); goPage('user-management'); }catch(e){toast(e.message,'err');} }
+
+// ══════════════════════════════════════════════
+// STARTUP — check session
+// ══════════════════════════════════════════════
+(async function boot(){
+  const token=localStorage.getItem('taxly_token');
+  if(!token) return;
+  try{ const me=await api('GET','/api/auth/me'); _user=me; if(me.must_change_pwd){showChangePwd();return;} await initApp(); }
+  catch(e){ localStorage.removeItem('taxly_token'); }
+})();
+</script>
+</body>
+</html>
