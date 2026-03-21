@@ -1140,7 +1140,16 @@ async function api(method, url, body=null) {
   const r = await fetch(url, opts);
   if (r.status === 401) { doLogout(); throw new Error('Session expired'); }
   const d = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(d.detail || 'Request failed');
+  if (!r.ok) {
+    // d.detail may be a string, array (Pydantic 422), or missing entirely
+    let msg = 'Request failed';
+    if (d.detail) {
+      if (typeof d.detail === 'string') msg = d.detail;
+      else if (Array.isArray(d.detail)) msg = d.detail.map(e => e.msg || JSON.stringify(e)).join('; ');
+      else msg = JSON.stringify(d.detail);
+    }
+    throw new Error(msg);
+  }
   return d;
 }
 
@@ -1487,8 +1496,22 @@ let _enqs = [];
 async function pgEnquiries(body) {
   setTopbar('Enquiries', 'Manage and convert incoming leads',
     `<button class="btn btn-teal" onclick="goPage('new-enquiry')"><i class="fas fa-plus"></i> New Enquiry</button>`);
-  _enqs = await api('GET', '/api/enquiries');
-  renderEnqs(body, _enqs, '');
+  try {
+    _enqs = await api('GET', '/api/enquiries');
+    renderEnqs(body, _enqs, '');
+  } catch (e) {
+    body.innerHTML = `
+      <div class="empty-state" style="padding:64px 24px">
+        <div class="empty-state-icon" style="background:var(--rose-lt);color:var(--rose)">
+          <i class="fas fa-exclamation-circle"></i>
+        </div>
+        <h3>Could not load enquiries</h3>
+        <p style="margin-bottom:18px;max-width:360px">${h(e.message)}</p>
+        <button class="btn btn-teal btn-sm" onclick="goPage('enquiries')">
+          <i class="fas fa-rotate-right"></i> Try Again
+        </button>
+      </div>`;
+  }
 }
 
 function renderEnqs(body, data, filter) {
