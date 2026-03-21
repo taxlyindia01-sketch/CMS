@@ -2,7 +2,7 @@
 Pydantic Schemas for request/response validation
 """
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from decimal import Decimal
@@ -51,20 +51,33 @@ class EnquiryUpdate(BaseModel):
 class EnquiryOut(BaseModel):
     id: int
     proposed_company_name: str
-    company_address: Optional[str]
-    authorised_capital: Optional[Decimal]
-    paidup_capital: Optional[Decimal]
-    director_names: List[str]
-    shareholder_names: List[str]
-    shareholding_pattern: Dict[str, Any]
-    contact_name: Optional[str]
-    contact_email: Optional[str]
-    contact_phone: Optional[str]
+    company_address: Optional[str] = None
+    authorised_capital: Optional[Decimal] = None
+    paidup_capital: Optional[Decimal] = None
+    # FIX: These JSON columns can be NULL in DB (rows inserted before defaults were set).
+    # Using Optional with default=[] prevents Pydantic validation errors on NULL values.
+    director_names: Optional[List[str]] = Field(default_factory=list)
+    shareholder_names: Optional[List[str]] = Field(default_factory=list)
+    shareholding_pattern: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    contact_name: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
     status: EnquiryStatus
     service_type: ServiceType
-    assigned_staff_id: Optional[int]
+    assigned_staff_id: Optional[int] = None
     created_at: datetime
-    ai_drafts: List[Any] = []
+    ai_drafts: List[Any] = Field(default_factory=list)
+
+    # FIX: Coerce None → [] for JSON array columns that may be NULL in DB
+    @field_validator('director_names', 'shareholder_names', mode='before')
+    @classmethod
+    def coerce_list(cls, v):
+        return v if v is not None else []
+
+    @field_validator('shareholding_pattern', mode='before')
+    @classmethod
+    def coerce_dict(cls, v):
+        return v if v is not None else {}
 
     model_config = {"from_attributes": True}
 
@@ -75,16 +88,15 @@ class ClientOut(BaseModel):
     id: int
     client_id: str
     company_name: str
-    contact_name: Optional[str]
-    contact_email: Optional[str]
-    contact_phone: Optional[str]
-    assigned_staff_id: Optional[int]
+    contact_name: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
+    assigned_staff_id: Optional[int] = None
     is_active: bool
     service_type: ServiceType
     created_at: datetime
-    # FIX: company_master_id is the CompanyMaster.id (NOT Client.id).
-    # All governance routes (/api/meetings, /api/compliance, /api/registers)
-    # use CompanyMaster.id. Frontend uses this field to build correct URLs.
+    # company_master_id is CompanyMaster.id (NOT Client.id).
+    # All governance routes use CompanyMaster.id.
     company_master_id: Optional[int] = None
 
     model_config = {"from_attributes": True}
@@ -103,7 +115,7 @@ class WorkflowTemplateOut(BaseModel):
     service_type: ServiceType
     stage_name: str
     stage_order: int
-    description: Optional[str]
+    description: Optional[str] = None
     is_active: bool
 
     model_config = {"from_attributes": True}
@@ -114,8 +126,8 @@ class WorkflowProgressOut(BaseModel):
     stage_name: str
     stage_order: int
     is_completed: bool
-    completed_at: Optional[datetime]
-    notes: Optional[str]
+    completed_at: Optional[datetime] = None
+    notes: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
